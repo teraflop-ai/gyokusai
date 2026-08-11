@@ -6,50 +6,13 @@ import numpy as np
 from daft import col, DataType, DataFrame
 from sklearn.cluster import MiniBatchKMeans
 
+from llm_data.factories.embedding import EmbedText
 from ..config import EMBEDDING_DEDUPE_BATCH_SIZE, EMBEDDING_DEDUPE_DIM, EMBEDDING_DEDUPE_MODEL_NAME
 
 
 class PruneResult(TypedDict):
     doc_id: str
     keep: bool
-
-
-@daft.cls(max_concurrency=1, use_process=True, gpus=1)
-class EmbedderUDF:
-    def __init__(self) -> None:
-        import torch
-        from sentence_transformers import SentenceTransformer
- 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = SentenceTransformer(EMBEDDING_DEDUPE_MODEL_NAME, device=self.device)
-        self.model = self.model.eval()
- 
-    @daft.method.batch(
-        return_dtype=DataType.embedding(DataType.float32(), EMBEDDING_DEDUPE_DIM),
-        batch_size=EMBEDDING_DEDUPE_BATCH_SIZE,
-    )
-    def embed_text(self, texts):
-        import torch
- 
-        with torch.inference_mode():
-            embeddings = self.model.encode(
-                texts,
-                batch_size=EMBEDDING_DEDUPE_BATCH_SIZE,
-                output_value="sentence_embedding",
-                precision="float32",
-                normalize_embeddings=True,  # -> cosine sim == dot product
-                show_progress_bar=False,
-                convert_to_numpy=True,
-            )
-        return embeddings
-
-
-def embed_documents(df: DataFrame, input_col: str='text') -> DataFrame:
-    embedder = EmbedderUDF()
-    return (
-        df.into_batches(EMBEDDING_DEDUPE_BATCH_SIZE)
-        .with_column("embedding", embedder.embed_text(col(input_col)))
-    )
 
 
 @daft.cls(max_concurrency=1, use_process=True)
@@ -193,11 +156,12 @@ class EmbeddingDeduper:
         kmeans_sample_size: int=200_000
     ):
         self.input_column = input_column
+        self.embed_udf = EmbedText(input_column, 'embedding')
         self.n_clusters = n_clusters
         self.kmeans_sample_size = kmeans_sample_size
 
     def __call__(self, df: DataFrame) -> DataFrame:
-        df = embed_documents(df, self.input_column)
+        df = self.embed_udf(df)
 
         # Materializing so we don't recompute embeddings later
         df = df.collect()
