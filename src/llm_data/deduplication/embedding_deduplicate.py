@@ -7,7 +7,6 @@ from daft import col, DataType, DataFrame
 from sklearn.cluster import MiniBatchKMeans
 
 from llm_data.factories.embedding import EmbedText
-from ..config import EMBEDDING_DEDUPE_BATCH_SIZE, EMBEDDING_DEDUPE_DIM, EMBEDDING_DEDUPE_MODEL_NAME
 
 
 class PruneResult(TypedDict):
