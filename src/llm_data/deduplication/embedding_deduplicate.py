@@ -1,7 +1,8 @@
-from typing import TypedDict
+from typing import TypedDict, List
 
 import daft
 import numpy as np
+import usearch.index as usearch_index
 
 from daft import col, DataType, DataFrame
 from sklearn.cluster import MiniBatchKMeans
@@ -9,162 +10,92 @@ from sklearn.cluster import MiniBatchKMeans
 from llm_data.factories.embedding import EmbedText
 
 
-class PruneResult(TypedDict):
-    doc_id: str
-    keep: bool
+class UnionFind:
 
-
-@daft.cls(max_concurrency=1, use_process=True)
-class ClusterAssignerUDF:
+    def __init__(self, n: int) -> None:
+        self.parent = np.arange(n)
  
-    def __init__(self, centroids: np.ndarray) -> None:
-        self.centroids = centroids  # (K, dim), L2-normalized
+    def find(self, x: int) -> int:
+        root = x
+        while self.parent[root] != root:
+            root = self.parent[root]
+        while self.parent[x] != root: 
+            self.parent[x], x = root, self.parent[x]
+        return root
  
-    @daft.method.batch(
-        return_dtype=DataType.struct(
-            {"cluster_id": DataType.int32(), "sim_to_centroid": DataType.float32()}
-        ),
-        batch_size=2048,
-    )
-    def assign(self, embeddings):
-        vecs = np.asarray(embeddings, dtype=np.float32)  # (n, dim)
-        sims = vecs @ self.centroids.T  # (n, K) cosine sim, both unit-norm
-        cluster_id = np.argmax(sims, axis=1).astype(np.int32)
-        sim_to_centroid = sims[np.arange(len(vecs)), cluster_id].astype(np.float32)
-        return [
-            {"cluster_id": int(c), "sim_to_centroid": float(s)}
-            for c, s in zip(cluster_id, sim_to_centroid)
-        ]
-
-
-def fit_kmeans_centroids(
-    df: DataFrame,
-    n_clusters: int,
-    sample_size: int,
-    seed: int,
+    def union(self, a: int, b: int) -> None:
+        ra, rb = self.find(a), self.find(b)
+        if ra != rb:
+            self.parent[ra] = rb
+ 
+ 
+def find_duplicate_groups(
+    embeddings: np.ndarray,
+    sim_threshold: float,
+    k_neighbors: int,
 ) -> np.ndarray:
-    """ We follow SemDeDup here and fit means on a representative sample,
-    followed by re-using centroids on the full pass (rather than fitting
-    on the full sample).)
-    """
-    sample_rows = (
-        df.select("embedding")
-        .limit(sample_size)
-        .to_pydict()["embedding"]
-    )
-    sample = np.asarray(sample_rows, dtype=np.float32)
- 
-    kmeans = MiniBatchKMeans(
-        n_clusters=n_clusters,
-        random_state=seed,
-        n_init="auto",
-        batch_size=4096,
-    )
-    kmeans.fit(sample)
- 
-    centroids = kmeans.cluster_centers_.astype(np.float32)
-    centroids /= np.clip(np.linalg.norm(centroids, axis=1, keepdims=True), 1e-8, None)
-    return centroids
-
-
-def assign_clusters(df: DataFrame, centroids: np.ndarray) -> DataFrame:
-    assigner = ClusterAssignerUDF(centroids)
-    return (
-        df.with_column("assignment", assigner.assign(col("embedding")))
-        .with_column("cluster_id", col("assignment").get("cluster_id"))
-        .with_column("sim_to_centroid", col("assignment").get("sim_to_centroid"))
-        .exclude("assignment")
-    )
-
- 
-def _semdedup_keep_mask(embeddings: np.ndarray, sim_to_centroid: np.ndarray, threshold: float,
-                        max_block_size: int=4096) -> np.ndarray:
     n = embeddings.shape[0]
-    order = np.argsort(-sim_to_centroid, kind="stable")  # descending
-    sorted_embeddings = embeddings[order]
+    index = usearch_index.Index(ndim=embeddings.shape[1], metric="cos", dtype="f32")
+    index.add(np.arange(n), embeddings, threads=0)
  
-    keep_sorted = np.ones(n, dtype=bool)
+    # +1 because the nearest neighbor of any point already in the index
+    # is itself (distance 0); filtered below
+    matches = index.search(embeddings, count=k_neighbors + 1, threads=0)
  
-    for start in range(0, n, max_block_size):
-        end = min(start + max_block_size, n)
-        block = sorted_embeddings[start:end]              # (b, dim)
-        prior = sorted_embeddings[:end]                    # (end, dim), grows each block
-        sims = block @ prior.T                              # (b, end)
-        for local_i, global_i in enumerate(range(start, end)):
-            # Compare only against strictly-earlier points (exclude self
-            # and anything at/after this index).
-            row = sims[local_i, :global_i]
-            if row.size and row.max() > threshold:
-                keep_sorted[global_i] = False
+    uf = UnionFind(n)
+    for i, row in enumerate(matches):
+        for m in row:
+            j = int(m.key)
+            if j == i:
+                continue
+            sim = 1.0 - float(m.distance) 
+            if sim > sim_threshold:
+                uf.union(i, j)
  
-    keep = np.empty(n, dtype=bool)
-    keep[order] = keep_sorted
+    return np.array([uf.find(i) for i in range(n)])
+ 
+ 
+def pick_representatives(group_ids: np.ndarray, text_lengths: np.ndarray) -> np.ndarray:
+    """For each duplicate group, keep the row with the longest text.
+    Returns a boolean keep-mask aligned with the original row order."""
+    n = len(group_ids)
+    keep = np.zeros(n, dtype=bool)
+    # argsort by (group, -length) so the first row of each group in the
+    # sorted order is the longest; avoids a Python-level loop over groups.
+    order = np.lexsort((-text_lengths, group_ids))
+    sorted_groups = group_ids[order]
+    is_first_in_group = np.empty(n, dtype=bool)
+    is_first_in_group[0] = True
+    is_first_in_group[1:] = sorted_groups[1:] != sorted_groups[:-1]
+    keep[order[is_first_in_group]] = True
     return keep
- 
- 
-@daft.func
-def prune_cluster(
-    doc_id: list,
-    embedding: list,
-    sim_to_centroid: list,
-    threshold: float = 0.93
-) -> list[PruneResult]:
-    ids = np.asarray(doc_id)
-    sims = np.asarray(sim_to_centroid, dtype=np.float32)
-    embs = np.asarray(embedding, dtype=np.float32)
- 
-    keep_mask = _semdedup_keep_mask(embs, sims, threshold)
- 
-    return [
-        {"doc_id": str(i), "keep": bool(k)}
-        for i, k in zip(ids.tolist(), keep_mask.tolist())
-    ]
- 
- 
-def semdedup_prune(df: DataFrame) -> DataFrame:
-    grouped = (
-        df.groupby("cluster_id")
-        .list_agg("doc_id", "embedding", "sim_to_centroid")
-    )
- 
-    pruned = (
-        grouped.with_column(
-            "results",
-            prune_cluster(col("doc_id"), col("embedding"), col("sim_to_centroid")),
-        )
-        .select("cluster_id", "results")
-        .explode("results")
-        .with_column("doc_id", col("results").get("doc_id"))
-        .with_column("keep", col("results").get("keep"))
-        .select("doc_id", "keep")
-    )
- 
-    deduped = (
-        df.join(pruned, on="doc_id", how="inner")
-        .where(col("keep"))
-        .exclude("keep")
-    )
-    return deduped
 
 
 class EmbeddingDeduper:
     def __init__(
         self,
         input_column: str='text',
-        n_clusters: int=2000,
-        kmeans_sample_size: int=200_000
+        sim_threshold: float=0.93,
+        k_neighbors: int=10
     ):
         self.input_column = input_column
         self.embed_udf = EmbedText(input_column, 'embedding')
-        self.n_clusters = n_clusters
-        self.kmeans_sample_size = kmeans_sample_size
+        self.sim_threshold = sim_threshold
+        self.k_neighors = k_neighbors
 
     def __call__(self, df: DataFrame) -> DataFrame:
         df = self.embed_udf(df)
 
         # Materializing so we don't recompute embeddings later
         df = df.collect()
-        centroids = fit_kmeans_centroids(df, self.n_clusters, self.kmeans_sample_size, seed=0)
-        df = assign_clusters(df, centroids).collect()
-        deduped = semdedup_prune(df)
+
+        cols = df.select("record_id", "text", "embedding").to_pydict()
+        embeddings = np.asarray(cols["embedding"], dtype=np.float32)
+        text_lengths = np.array([len(t) for t in cols["text"]])
+    
+        group_ids = find_duplicate_groups(embeddings, self.sim_threshold, self.k_neighbors)
+        keep_mask = pick_representatives(group_ids, text_lengths)
+        keep_ids = set(np.asarray(cols["doc_id"])[keep_mask].tolist())
+        deduped = df.where(col("doc_id").is_in(list(keep_ids)))
         return deduped
+        
