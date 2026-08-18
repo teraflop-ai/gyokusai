@@ -1,13 +1,7 @@
-from typing import TypedDict, List
-
-import daft
 import numpy as np
 import usearch.index as usearch_index
 
-from daft import col, DataType, DataFrame
-from sklearn.cluster import MiniBatchKMeans
-
-from llm_data.factories.embedding import EmbedText
+from daft import col, DataFrame
 
 
 class UnionFind:
@@ -74,12 +68,15 @@ def pick_representatives(group_ids: np.ndarray, text_lengths: np.ndarray) -> np.
 class EmbeddingDeduper:
     def __init__(
         self,
-        input_column: str='text',
+        embedding_column: str='text_embedding',
+        text_column: str='text',
+        id_column: str='record_id',
         sim_threshold: float=0.93,
         k_neighbors: int=10
     ):
-        self.input_column = input_column
-        self.embed_udf = EmbedText(input_column, 'embedding')
+        self.embedding_column = embedding_column
+        self.text_column = text_column
+        self.id_column = id_column
         self.sim_threshold = sim_threshold
         self.k_neighors = k_neighbors
 
@@ -89,13 +86,13 @@ class EmbeddingDeduper:
         # Materializing so we don't recompute embeddings later
         df = df.collect()
 
-        cols = df.select("record_id", "text", "embedding").to_pydict()
-        embeddings = np.asarray(cols["embedding"], dtype=np.float32)
-        text_lengths = np.array([len(t) for t in cols["text"]])
+        cols = df.select(self.id_column, self.text_column, self.embedding_colum).to_pydict()
+        embeddings = np.asarray(self.embedding_colum, dtype=np.float32)
+        text_lengths = np.array([len(t) for t in cols[self.text_column]])
     
         group_ids = find_duplicate_groups(embeddings, self.sim_threshold, self.k_neighbors)
         keep_mask = pick_representatives(group_ids, text_lengths)
-        keep_ids = set(np.asarray(cols["doc_id"])[keep_mask].tolist())
-        deduped = df.where(col("doc_id").is_in(list(keep_ids)))
+        keep_ids = set(np.asarray(cols[self.id_column])[keep_mask].tolist())
+        deduped = df.where(col(self.id_column).is_in(list(keep_ids)))
         return deduped
         
