@@ -81,11 +81,6 @@ class EmbeddingDeduper:
         self.k_neighors = k_neighbors
 
     def __call__(self, df: DataFrame) -> DataFrame:
-        df = self.embed_udf(df)
-
-        # Materializing so we don't recompute embeddings later
-        df = df.collect()
-
         cols = df.select(self.id_column, self.text_column, self.embedding_colum).to_pydict()
         embeddings = np.asarray(self.embedding_colum, dtype=np.float32)
         text_lengths = np.array([len(t) for t in cols[self.text_column]])
