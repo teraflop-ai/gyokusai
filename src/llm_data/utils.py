@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import Literal
-
+import json
 import daft
 from daft import DataType
 from resiliparse.parse.encoding import bytes_to_str, detect_encoding
@@ -58,4 +58,8 @@ def get_filepaths(directory, extension=".parquet"):
 
 def load_personas(_DATASET_ID) -> daft.DataFrame:
     return daft.read_huggingface(_DATASET_ID)
-    return daft_dtype
+
+def json_arg(v):
+    if os.path.isfile(v):
+        return json.load(open(v))
+    return json.loads(v)
