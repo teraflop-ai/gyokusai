@@ -26,14 +26,19 @@ def generation_factory(
     gpus: int | float = 1,
     cpus: Optional[float] = None,
     max_concurrency: Optional[int] = None,
+    json_schema: Optional[dict] = None,
+    truncate_to: Optional[int] = None,
 ):
     from daft import DataType, Series
 
     @daft.cls(gpus=gpus, cpus=cpus, max_concurrency=max_concurrency)
     class TextGeneration:
         def __init__(self):
+            import json
+
             import sglang as sgl
             from transformers import AutoTokenizer
+
             self.tok = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
             self.engine = sgl.Engine(
                 model_path=model_path,
@@ -47,15 +52,23 @@ def generation_factory(
                 mamba_radix_cache_strategy="extra_buffer_lazy",
                 mamba_ssm_dtype="bfloat16",
                 disable_cuda_graph=disable_cuda_graph,
+                allow_auto_truncate=True,
             )
-            self.sampling = {"temperature": temperature, "max_new_tokens": max_new_tokens}
+            self.sampling = {
+                "temperature": temperature,
+                "max_new_tokens": max_new_tokens,
+            }
+            if json_schema is not None:
+                self.sampling["json_schema"] = json.dumps(json_schema)
 
         @daft.method.batch(return_dtype=DataType.string(), batch_size=batch_size)
         def generate(self, docs: Series):
             prompts = [
                 self.tok.apply_chat_template(
-                    [{"role": "system", "content": instruction},
-                     {"role": "user", "content": doc}],
+                    [
+                        {"role": "system", "content": instruction},
+                        {"role": "user", "content": doc[:truncate_to]},
+                    ],
                     tokenize=False,
                     add_generation_prompt=True,
                     enable_thinking=enable_thinking,

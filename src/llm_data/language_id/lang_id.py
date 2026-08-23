@@ -1,5 +1,6 @@
 import daft
-from daft import DataFrame, col, functions as F
+from daft import DataFrame, col
+from daft import functions as F
 from fastertext import load_model
 from huggingface_hub import hf_hub_download
 

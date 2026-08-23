@@ -1,11 +1,13 @@
 import daft
-from daft import col, DataType, Series
+from daft import DataType, Series, col
+
 
 @daft.cls(max_concurrency=1, use_process=True)
 class TokenCounter:
     def __init__(self, model: str = "Qwen/Qwen3.5-9B"):
         import gigatoken as gt
         from transformers import AutoTokenizer
+
         self.tok = gt.Tokenizer(AutoTokenizer.from_pretrained(model)).as_hf()
 
     @daft.method.batch(return_dtype=DataType.int64())
@@ -19,6 +21,7 @@ class TokenizeText:
     def __init__(self, model: str = "Qwen/Qwen3.5-9B"):
         import gigatoken as gt
         from transformers import AutoTokenizer
+
         self.tok = gt.Tokenizer(AutoTokenizer.from_pretrained(model)).as_hf()
 
     @daft.method.batch(return_dtype=DataType.list(DataType.int64()))
