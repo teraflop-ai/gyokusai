@@ -5,7 +5,7 @@ import daft
 from daft import DataFrame, col
 from magic_html import GeneralExtractor
 
-from llm_data.utils import decode_html
+from gyokusai.utils import decode_html
 
 
 @daft.func

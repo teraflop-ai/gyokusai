@@ -1,5 +1,5 @@
 def test_resume():
-    from llm_data.loader import DataLoader
+    from gyokusai.loader import DataLoader
 
     dataloader = DataLoader()
 
@@ -16,7 +16,7 @@ def test_resume():
 def test_embed_text():
     import daft
 
-    from llm_data.factories.embedding import EmbedText
+    from gyokusai.factories.embedding import EmbedText
 
     df = daft.read_parquet("/home/henry/EDGAR/10-Q")
     df = EmbedText(
@@ -34,7 +34,7 @@ def test_embed_text():
 def test_fix_text_encoding():
     import daft
 
-    from llm_data.encoding import FixEncoding
+    from gyokusai.encoding import FixEncoding
 
     df = daft.from_pydict(
         {
@@ -55,7 +55,7 @@ def test_fix_text_encoding():
 def test_parse_html():
     import daft
 
-    from llm_data.parsers.html import ParseHtml
+    from gyokusai.parsers.html import ParseHtml
 
     df = daft.from_pydict(
         {
@@ -95,8 +95,8 @@ def test_parse_html():
 def test_data_engine():
     import daft
 
-    from llm_data.encoding import FixEncoding
-    from llm_data.engine import DataEngine
+    from gyokusai.encoding import FixEncoding
+    from gyokusai.engine import DataEngine
 
     df = daft.from_pydict(
         {
@@ -117,7 +117,7 @@ def test_data_engine():
 def test_parse_math():
     import daft
 
-    from llm_data.parsers.math import ParseMath
+    from gyokusai.parsers.math import ParseMath
 
     MATH_HTML = """
 <!DOCTYPE html>

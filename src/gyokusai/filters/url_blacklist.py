@@ -4,7 +4,7 @@ import daft
 from daft import DataFrame, col
 from datasets import load_dataset
 
-from llm_data.config import (
+from gyokusai.config import (
     DEFAULT_BLACKLIST_COLUMN_NAME,
     DEFAULT_BLACKLIST_REPO_ID,
     DEFAULT_BLACKLIST_SPLIT,

@@ -8,7 +8,7 @@ from daft import col
 from daft.functions import length
 from lxml import etree
 
-from llm_data.utils import to_text
+from gyokusai.utils import to_text
 
 _POST_COLUMNS = (
     "id",

@@ -3,7 +3,7 @@ from typing import Optional
 from daft import DataFrame, col
 from daft.functions import hash
 
-from llm_data.utils import decode_html
+from gyokusai.utils import decode_html
 
 
 class ExtractWarc:

@@ -17,7 +17,7 @@ def embedding_factory(
     import daft
     from daft import DataType, Series
 
-    from llm_data.utils import daft_dtype
+    from gyokusai.utils import daft_dtype
 
     dtype = daft_dtype(precision=precision)
     return_dtype = DataType.embedding(dtype, embedding_dim)
