@@ -1,14 +1,18 @@
+# Installation
+```bash
+uv add gyokusai
+```
 ```bash
 ruff check --select I --fix . && ruff format .
 ```
 ```bibtex
-@software{shippole2026llmdata,
-  title        = {: A Python Library for },
+@software{shippole2026gyokusai,
+  title        = {Gyokusai: A Web-Scale Text Processing Library},
   author       = {Shippole, Enrico and Hu, Andrew and Li, Owen and Huang, Thomas and Jitsev, Jenia},
   year         = {2026},
-  url          = {https://github.com/teraflop-ai/llm-data},
-  version      = {1.0.0},
-  note         = {Python package available on PyPI at \url{https://pypi.org/project//}}
+  url          = {https://github.com/teraflop-ai/gyokusai},
+  version      = {0.1.1},
+  note         = {Python package available on PyPI at \url{https://pypi.org/project/gyokusai/}}
 }
 ```
 ```bibtex
