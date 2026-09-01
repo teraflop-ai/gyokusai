@@ -1,9 +1,11 @@
+import json
 import os
 from pathlib import Path
 from typing import Literal
-import json
+
 import daft
-from daft import DataType
+from daft import DataType, col, element
+from daft.functions import length, list_filter, list_map, split, strip
 from resiliparse.parse.encoding import bytes_to_str, detect_encoding
 
 
@@ -59,7 +61,18 @@ def get_filepaths(directory, extension=".parquet"):
 def load_personas(_DATASET_ID) -> daft.DataFrame:
     return daft.read_huggingface(_DATASET_ID)
 
+
 def json_arg(v):
     if os.path.isfile(v):
         return json.load(open(v))
     return json.loads(v)
+
+
+def sentences(column: str):
+    lines = list_map(split(col(column), "\n"), strip(element()))
+    return list_filter(lines, length(element()) > 0)
+
+
+def paragraphs(column: str):
+    paras = list_map(split(col(column), "\n\n"), strip(element()))
+    return list_filter(paras, length(element()) > 0)
