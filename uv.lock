@@ -1881,6 +1881,67 @@ wheels = [
 ]
 
 [[package]]
+name = "gyokusai"
+version = "0.1.1"
+source = { editable = "." }
+dependencies = [
+    { name = "daft", extra = ["openai", "ray"] },
+    { name = "fastertext" },
+    { name = "ftfy" },
+    { name = "gigatoken" },
+    { name = "google-re2" },
+    { name = "kernels" },
+    { name = "lxml" },
+    { name = "magic-html" },
+    { name = "orjson" },
+    { name = "presidio-analyzer" },
+    { name = "presidio-anonymizer" },
+    { name = "py7zr" },
+    { name = "resiliparse" },
+    { name = "sentence-transformers" },
+    { name = "text-dedup" },
+    { name = "trafilatura" },
+    { name = "usearch" },
+    { name = "vllm" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "daft", extras = ["openai", "ray"], specifier = ">=0.7.16" },
+    { name = "fastertext", specifier = ">=0.1.1" },
+    { name = "ftfy", specifier = ">=6.3.1" },
+    { name = "gigatoken", specifier = ">=0.10.0" },
+    { name = "google-re2", specifier = ">=1.1.20251105" },
+    { name = "kernels", specifier = "<0.15" },
+    { name = "lxml", specifier = ">=6.1.1" },
+    { name = "magic-html", specifier = ">=0.1.8" },
+    { name = "orjson", specifier = ">=3.10,<4" },
+    { name = "presidio-analyzer", specifier = ">=2.2.364" },
+    { name = "presidio-anonymizer", specifier = ">=2.2.364" },
+    { name = "py7zr", specifier = ">=1.1.3" },
+    { name = "resiliparse", specifier = ">=1.0.8" },
+    { name = "sentence-transformers", specifier = ">=5.6.0" },
+    { name = "text-dedup", specifier = ">=0.4.1" },
+    { name = "trafilatura", specifier = ">=2.1.0" },
+    { name = "usearch", specifier = ">=2.26.0" },
+    { name = "vllm", specifier = ">=0.26.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=7.3.0" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "ruff", specifier = ">=0.15.22" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2194,6 +2255,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/30/8bbc587bb2ad09ab7edf1f9215b2c5faf4fa7ee7c071daefe9ed55e28814/inflate64-1.0.4-cp314-cp314t-win32.whl", hash = "sha256:f8964ceaabea294bc20abc9ef408c6aae978a75c25c83168a76cd87a37c38938", size = 33865, upload-time = "2025-11-28T10:55:35.335Z" },
     { url = "https://files.pythonhosted.org/packages/91/87/8bf6f412f93c8b6dc14866a021b83321331fbdd17f6ab902a24dbf88773d/inflate64-1.0.4-cp314-cp314t-win_amd64.whl", hash = "sha256:7d13b04cba65c12d21e65eaa77da9484e265e8e821b26e0761d1455ad3a878d9", size = 36943, upload-time = "2025-11-28T10:55:36.983Z" },
     { url = "https://files.pythonhosted.org/packages/7d/85/33447bb3c4e3c0ae7b1fde3aadc52a18b2b0193cfcf4f585977e924c6463/inflate64-1.0.4-cp314-cp314t-win_arm64.whl", hash = "sha256:9ae3ee727235a06dc3cd353ee5761fdd8e3b56ad119c711f61680528972a6ced", size = 34846, upload-time = "2025-11-28T10:55:38.433Z" },
+]
+
+[[package]]
+name = "iniconfig"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
 ]
 
 [[package]]
@@ -2528,65 +2598,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/51/b9/dc76d7716e04dc7b3427cae52eaa32bd20771382d4d1dd9f4538a9dd2086/llguidance-1.7.6-cp39-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:e70fa25ed550c2b50c2fd70baa9e2808b4ecb859d01e453bd5459aff62ba38c3", size = 2899993, upload-time = "2026-06-03T20:13:13.563Z" },
     { url = "https://files.pythonhosted.org/packages/1a/64/d74336f22242ef94356a456057d4ff1be7c1bc9c7dbc867171c6982a5512/llguidance-1.7.6-cp39-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:ceec951d29a74309984e3be0fe7f5f56c1362434cd937abd517b259a60908b1e", size = 3074809, upload-time = "2026-06-03T20:13:15.498Z" },
     { url = "https://files.pythonhosted.org/packages/49/37/99d700f0e2c83acf25a8d8946b2bee9f5eac47bc530bfbd53ba3126c667f/llguidance-1.7.6-cp39-abi3-win_amd64.whl", hash = "sha256:ace7e81cd31950a87186356ab24bd7f75fbc10a05ca9d9f7f8748f931963f763", size = 2879207, upload-time = "2026-06-03T20:13:23.341Z" },
-]
-
-[[package]]
-name = "llm-data"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "daft", extra = ["openai", "ray"] },
-    { name = "fastertext" },
-    { name = "ftfy" },
-    { name = "gigatoken" },
-    { name = "google-re2" },
-    { name = "kernels" },
-    { name = "lxml" },
-    { name = "magic-html" },
-    { name = "orjson" },
-    { name = "presidio-analyzer" },
-    { name = "presidio-anonymizer" },
-    { name = "py7zr" },
-    { name = "resiliparse" },
-    { name = "sentence-transformers" },
-    { name = "text-dedup" },
-    { name = "trafilatura" },
-    { name = "usearch" },
-    { name = "vllm" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "daft", extras = ["openai", "ray"], specifier = ">=0.7.16" },
-    { name = "fastertext", specifier = ">=0.1.1" },
-    { name = "ftfy", specifier = ">=6.3.1" },
-    { name = "gigatoken", specifier = ">=0.10.0" },
-    { name = "google-re2", specifier = ">=1.1.20251105" },
-    { name = "kernels", specifier = "<0.15" },
-    { name = "lxml", specifier = ">=6.1.1" },
-    { name = "magic-html", specifier = ">=0.1.8" },
-    { name = "orjson", specifier = ">=3.10,<4" },
-    { name = "presidio-analyzer", specifier = ">=2.2.364" },
-    { name = "presidio-anonymizer", specifier = ">=2.2.364" },
-    { name = "py7zr", specifier = ">=1.1.3" },
-    { name = "resiliparse", specifier = ">=1.0.8" },
-    { name = "sentence-transformers", specifier = ">=5.6.0" },
-    { name = "text-dedup", specifier = ">=0.4.1" },
-    { name = "trafilatura", specifier = ">=2.1.0" },
-    { name = "usearch", specifier = ">=2.26.0" },
-    { name = "vllm", specifier = ">=0.26.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=7.3.0" },
-    { name = "ruff", specifier = ">=0.15.22" },
 ]
 
 [[package]]
@@ -4341,6 +4352,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pluggy"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
 name = "polars"
 version = "1.43.2"
 source = { registry = "https://pypi.org/simple" }
@@ -5186,6 +5206,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c4/da/dc9e5e10bc56056bd8c33e533517cb327752cbaf172688bba3c23f6b2318/pyppmd-1.3.1-cp314-cp314t-win32.whl", hash = "sha256:de87f7acd575fb07a4ff42d41bcc071570fe759a36f345f1f54f574ecfccfc5b", size = 43016, upload-time = "2025-11-27T22:08:40.234Z" },
     { url = "https://files.pythonhosted.org/packages/fa/a0/46dc15549ad2c0427a9825730e6bdf342045ad410543368afd4389a16f36/pyppmd-1.3.1-cp314-cp314t-win_amd64.whl", hash = "sha256:76e4800aa67292b4cc80058fd29b39e02a5dded721af9fe5654f356ef24307f4", size = 48636, upload-time = "2025-11-27T22:08:41.45Z" },
     { url = "https://files.pythonhosted.org/packages/a1/7b/7e9a83848de928c26f0ab3ee105c0da63a932a0804a94807205e6313e73a/pyppmd-1.3.1-cp314-cp314t-win_arm64.whl", hash = "sha256:e066cbf1d335fe20480cd8ecc10848ba78d99fe6d1e44ea00def48feaf46afdf", size = 46402, upload-time = "2025-11-27T22:08:42.804Z" },
+]
+
+[[package]]
+name = "pytest"
+version = "9.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "iniconfig" },
+    { name = "packaging" },
+    { name = "pluggy" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
 ]
 
 [[package]]

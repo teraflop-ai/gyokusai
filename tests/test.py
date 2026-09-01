@@ -1,10 +1,18 @@
+import daft
+import pytest
+
+from gyokusai.filters.filters import BadWordsFilter
+from gyokusai.encoding import FixEncoding
+from gyokusai.parsers.math import ParseMath
+from gyokusai.engine import DataEngine
+from gyokusai.parsers.html import ParseHtml
+from gyokusai.factories.embedding import EmbedText
+from gyokusai.loader import ParquetLoader
+
+
 def test_resume():
-    from gyokusai.loader import DataLoader
-
-    dataloader = DataLoader()
-
-    df = dataloader.read_data(input_path="/home/henry/EDGAR/10-Q")
-
+    dataloader = ParquetLoader()
+    df = dataloader(input_path="/home/henry/EDGAR/10-Q")
     written = df.write_parquet(
         "/home/henry/llm-data/processed",
         write_mode="append",
@@ -14,10 +22,6 @@ def test_resume():
 
 
 def test_embed_text():
-    import daft
-
-    from gyokusai.factories.embedding import EmbedText
-
     df = daft.read_parquet("/home/henry/EDGAR/10-Q")
     df = EmbedText(
         input_column="text",
@@ -31,32 +35,19 @@ def test_embed_text():
     df.show()
 
 
-def test_fix_text_encoding():
-    import daft
-
-    from gyokusai.encoding import FixEncoding
-
-    df = daft.from_pydict(
-        {
-            "text": [
-                "âœ” No problems",
-                "The Mona Lisa doesnÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t have eyebrows.",
-            ]
-        }
-    )
-
-    fix_unicode = FixEncoding()
-
-    df = fix_unicode(df)
-
-    df.show()
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("âœ” No problems", "✔ No problems"),
+        ("The Mona Lisa doesnÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t have eyebrows.", "The Mona Lisa doesn't have eyebrows."),
+    ],
+)
+def test_fix_text_encoding(text, expected):
+    df = FixEncoding()(daft.from_pydict({"text": [text]}))
+    assert df.to_pydict()["text"] == [expected]
 
 
 def test_parse_html():
-    import daft
-
-    from gyokusai.parsers.html import ParseHtml
-
     df = daft.from_pydict(
         {
             "html": [
@@ -93,11 +84,6 @@ def test_parse_html():
 
 
 def test_data_engine():
-    import daft
-
-    from gyokusai.encoding import FixEncoding
-    from gyokusai.engine import DataEngine
-
     df = daft.from_pydict(
         {
             "text": [
@@ -115,10 +101,6 @@ def test_data_engine():
 
 
 def test_parse_math():
-    import daft
-
-    from gyokusai.parsers.math import ParseMath
-
     MATH_HTML = """
 <!DOCTYPE html>
 <html>
@@ -141,45 +123,18 @@ def test_parse_math():
     parser = ParseMath()
 
     df = parser(df)
-    df.show()
     result = df.collect()
     text = result.to_pydict()["text"][0]
-    print(text)
 
 
-def test_badwords_filter():
-    import daft
-
-    from gyokusai.filters.filters import BadWordsFilter
-
-    df = daft.from_pydict(
-        {
-            "text": [
-                "perfectly clean text",
-                "a blue waffle appears",
-                "badwords is a different token",
-                None,
-            ]
-        }
-    )
-
-    badwords_filter = BadWordsFilter()
-
-    df = badwords_filter(df)
-
-    df.show()
-    assert df.to_pydict()["text"] == [
-        "perfectly clean text",
-        "badwords is a different token",
-    ]
-
-
-if __name__ == "__main__":
-    # test_resume()
-    # test_embed_text()
-    # test_fix_text_encoding()
-    # test_parse_html()
-    # test_data_engine()
-    # test_parse_math()
-    test_badwords_filter()
-    pass
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        ("perfectly clean text", True),
+        ("a blue waffle appears", False),
+        ("badwords is a different token", True),
+    ],
+)
+def test_badwords_filter(text, kept):
+    df = BadWordsFilter()(daft.from_pydict({"text": [text]}))
+    assert df.count_rows() == kept
