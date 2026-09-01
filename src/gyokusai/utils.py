@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import daft
-from daft import DataType, col, element
-from daft.functions import length, list_filter, list_map, split, strip
+from daft import DataType
 from resiliparse.parse.encoding import bytes_to_str, detect_encoding
 
 
@@ -66,13 +65,3 @@ def json_arg(v):
     if os.path.isfile(v):
         return json.load(open(v))
     return json.loads(v)
-
-
-def sentences(column: str):
-    lines = list_map(split(col(column), "\n"), strip(element()))
-    return list_filter(lines, length(element()) > 0)
-
-
-def paragraphs(column: str):
-    paras = list_map(split(col(column), "\n\n"), strip(element()))
-    return list_filter(paras, length(element()) > 0)

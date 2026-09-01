@@ -25,6 +25,9 @@ dependencies = [
     "vllm>=0.26.0",
 ]
 
+[tool.setuptools.package-data]
+gyokusai = ["word_lists/*.txt"]
+
 [build-system]
 requires = ["uv_build"]
 build-backend = "uv_build"

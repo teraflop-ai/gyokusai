@@ -147,11 +147,39 @@ def test_parse_math():
     print(text)
 
 
+def test_badwords_filter():
+    import daft
+
+    from gyokusai.filters.filters import BadWordsFilter
+
+    df = daft.from_pydict(
+        {
+            "text": [
+                "perfectly clean text",
+                "a blue waffle appears",
+                "badwords is a different token",
+                None,
+            ]
+        }
+    )
+
+    badwords_filter = BadWordsFilter()
+
+    df = badwords_filter(df)
+
+    df.show()
+    assert df.to_pydict()["text"] == [
+        "perfectly clean text",
+        "badwords is a different token",
+    ]
+
+
 if __name__ == "__main__":
     # test_resume()
     # test_embed_text()
     # test_fix_text_encoding()
     # test_parse_html()
     # test_data_engine()
-    test_parse_math()
+    # test_parse_math()
+    test_badwords_filter()
     pass

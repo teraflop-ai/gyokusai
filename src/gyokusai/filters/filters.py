@@ -1,6 +1,7 @@
 from daft import DataFrame, col, element
 from daft.functions import (
     contains,
+    count_matches,
     length,
     list_count,
     list_filter,
@@ -11,8 +12,8 @@ from daft.functions import (
     try_divide,
 )
 
-from gyokusai.regexes import TERMINAL_PUNCTUATION
-from gyokusai.utils import sentences
+from gyokusai.filters.regexes import TERMINAL_PUNCTUATION
+from gyokusai.filters.utils import load_badwords, sentences
 
 
 class LoremIpsumFilter:
@@ -65,7 +66,7 @@ class TerminalPunctuationLineFilter:
 class MinWordsLineFilter:
     def __init__(
         self,
-        min_words: int = 3,
+        min_words: int = 5,
         input_column: str = "text",
         name: str = "MinWordsLineFilter",
     ):
@@ -128,3 +129,24 @@ class PunctuationFilter:
             list_filter(lines, ~regexp(element(), TERMINAL_PUNCTUATION))
         )
         return df.where(try_divide(without, list_count(lines)) <= self.max_ratio)
+
+
+class BadWordsFilter:
+    def __init__(
+        self,
+        input_column: str = "text",
+        badwords: list[str] | None = None,
+        name: str = "BadWordsFilter",
+    ):
+        self.input_column = input_column
+        self.badwords = list(badwords) if badwords is not None else load_badwords()
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        matches = count_matches(
+            col(self.input_column),
+            self.badwords,
+            whole_words=True,
+            case_sensitive=False,
+        )
+        return df.where(matches == 0)
