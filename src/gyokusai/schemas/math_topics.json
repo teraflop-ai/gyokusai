@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "topics": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "arithmetic",
+          "algebra",
+          "geometry",
+          "number_theory",
+          "combinatorics",
+          "probability",
+          "statistics",
+          "calculus",
+          "differential_equations",
+          "analysis",
+          "linear_algebra",
+          "abstract_algebra",
+          "topology_geometry",
+          "logic_foundations",
+          "optimization",
+          "computation",
+          "applied",
+          "other"
+        ]
+      }
+    }
+  },
+  "required": ["topics"]
+}
