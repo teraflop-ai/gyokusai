@@ -21,6 +21,7 @@ dependencies = [
     "sentence-transformers>=5.6.0",
     "text-dedup>=0.4.1",
     "trafilatura>=2.1.0",
+    "transformers>=5.6.0",
     "usearch>=2.26.0",
     "vllm>=0.26.0",
 ]

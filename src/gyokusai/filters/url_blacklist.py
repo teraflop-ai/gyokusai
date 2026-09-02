@@ -34,7 +34,7 @@ def _download_default_blacklist(
 
 
 @daft.func
-def extract_domain(url: str) -> str:
+def extract_domain(url: str | None) -> str:
     """Extract the bare, lowercased hostname from a URL.
 
     Handles CommonCrawl-style URLs with ports, userinfo, and session ids
@@ -43,7 +43,7 @@ def extract_domain(url: str) -> str:
      consulta/especie;jsessionid=mY8n3kSFVokUvnGHh3GEpWUm.undefined"
     -> "01.vistaalegredoalto.sp.gov.br"
     """
-    netloc = urlparse(url).netloc
+    netloc = urlparse(url or "").netloc
     return _parse_netloc_for_host(netloc)
 
 

@@ -1901,6 +1901,7 @@ dependencies = [
     { name = "sentence-transformers" },
     { name = "text-dedup" },
     { name = "trafilatura" },
+    { name = "transformers" },
     { name = "usearch" },
     { name = "vllm" },
 ]
@@ -1930,6 +1931,7 @@ requires-dist = [
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "text-dedup", specifier = ">=0.4.1" },
     { name = "trafilatura", specifier = ">=2.1.0" },
+    { name = "transformers", specifier = ">=5.6.0" },
     { name = "usearch", specifier = ">=2.26.0" },
     { name = "vllm", specifier = ">=0.26.0" },
 ]
