@@ -1,13 +1,13 @@
 import daft
 import pytest
 
-from gyokusai.filters.filters import BadWordsFilter
 from gyokusai.encoding import FixEncoding
-from gyokusai.parsers.math import ParseMath
 from gyokusai.engine import DataEngine
-from gyokusai.parsers.html import ParseHtml
 from gyokusai.factories.embedding import EmbedText
+from gyokusai.filters.filters import BadWordsFilter
 from gyokusai.loader import ParquetLoader
+from gyokusai.parsers.html import ParseHtml
+from gyokusai.parsers.math import ParseMath
 
 
 def test_resume():
@@ -39,7 +39,10 @@ def test_embed_text():
     ("text", "expected"),
     [
         ("âœ” No problems", "✔ No problems"),
-        ("The Mona Lisa doesnÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t have eyebrows.", "The Mona Lisa doesn't have eyebrows."),
+        (
+            "The Mona Lisa doesnÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t have eyebrows.",
+            "The Mona Lisa doesn't have eyebrows.",
+        ),
     ],
 )
 def test_fix_text_encoding(text, expected):
@@ -118,13 +121,9 @@ def test_parse_math():
 </body>
 </html>
 """
-    df = daft.from_pydict({"html": [MATH_HTML]})
-
-    parser = ParseMath()
-
-    df = parser(df)
-    result = df.collect()
-    text = result.to_pydict()["text"][0]
+    df = ParseMath()(daft.from_pydict({"html": [MATH_HTML]}))
+    text = df.to_pydict()["text"]
+    print(text)
 
 
 @pytest.mark.parametrize(
