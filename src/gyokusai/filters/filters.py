@@ -7,6 +7,7 @@ from daft.functions import (
     count_matches,
     length,
     list_count,
+    list_distinct,
     list_filter,
     list_join,
     lower,
@@ -15,7 +16,7 @@ from daft.functions import (
     try_divide,
 )
 
-from gyokusai.filters.regexes import TERMINAL_PUNCTUATION, ELLIPSIS
+from gyokusai.filters.regexes import ALPHA_NUMERIC, ELLIPSIS, TERMINAL_PUNCTUATION
 from gyokusai.filters.utils import load_badwords, sentences
 
 
@@ -211,7 +212,7 @@ class NonAlphaNumericFilter:
 
     def __call__(self, df: DataFrame) -> DataFrame:
         text = col(self.input_column)
-        ratio = try_divide(regexp_count(text, r"[^a-zA-Z0-9\n?!,.]"), length(text))
+        ratio = try_divide(regexp_count(text, ALPHA_NUMERIC), length(text))
         return df.where(ratio <= self.max_ratio)
 
 
@@ -230,3 +231,41 @@ class EllipsisFilter:
         lines = sentences(self.input_column)
         ending = list_count(list_filter(lines, regexp(element(), ELLIPSIS)))
         return df.where(try_divide(ending, list_count(lines)) <= self.max_ratio)
+
+
+class WordCountFilter:
+    def __init__(
+        self,
+        min_words: int = 50,
+        max_words: int = 100000,
+        input_column: str = "text",
+        name: str = "WordCountFilter",
+    ):
+        self.min_words = min_words
+        self.max_words = max_words
+        self.input_column = input_column
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        words = regexp_count(col(self.input_column), r"\S+")
+        return df.where((words >= self.min_words) & (words <= self.max_words))
+
+
+from gyokusai.filters.utils import paragraphs
+
+
+class RepeatedParagraphsFilter:
+    def __init__(
+        self,
+        min_unique_ratio: float = 0.7,
+        input_column: str = "text",
+        name: str = "RepeatedParagraphsFilter",
+    ):
+        self.min_unique_ratio = min_unique_ratio
+        self.input_column = input_column
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        paras = paragraphs(self.input_column)
+        ratio = try_divide(list_count(list_distinct(paras)), list_count(paras))
+        return df.where(ratio >= self.min_unique_ratio)
