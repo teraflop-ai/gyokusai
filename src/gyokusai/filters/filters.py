@@ -15,7 +15,7 @@ from daft.functions import (
     try_divide,
 )
 
-from gyokusai.filters.regexes import TERMINAL_PUNCTUATION
+from gyokusai.filters.regexes import TERMINAL_PUNCTUATION, ELLIPSIS
 from gyokusai.filters.utils import load_badwords, sentences
 
 
@@ -179,3 +179,54 @@ class GzipCompressionFilter:
     def __call__(self, df: DataFrame) -> DataFrame:
         ratio = self.gzip_ratio(col(self.input_column))
         return df.where((ratio >= self.min_ratio) & (ratio <= self.max_ratio))
+
+
+class DigitRatioFilter:
+    def __init__(
+        self,
+        max_ratio: float = 0.15,
+        input_column: str = "text",
+        name: str = "DigitRatioFilter",
+    ):
+        self.max_ratio = max_ratio
+        self.input_column = input_column
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        text = col(self.input_column)
+        ratio = try_divide(regexp_count(text, r"\d"), length(text))
+        return df.where(ratio <= self.max_ratio)
+
+
+class NonAlphaNumericFilter:
+    def __init__(
+        self,
+        max_ratio: float = 0.25,
+        input_column: str = "text",
+        name: str = "NonAlphaNumericFilter",
+    ):
+        self.max_ratio = max_ratio
+        self.input_column = input_column
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        text = col(self.input_column)
+        ratio = try_divide(regexp_count(text, r"[^a-zA-Z0-9\n?!,.]"), length(text))
+        return df.where(ratio <= self.max_ratio)
+
+
+class EllipsisFilter:
+    def __init__(
+        self,
+        max_ratio: float = 0.3,
+        input_column: str = "text",
+        name: str = "EllipsisFilter",
+    ):
+        self.max_ratio = max_ratio
+        self.input_column = input_column
+        self.name = name
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        lines = sentences(self.input_column)
+        ending = list_count(list_filter(lines, regexp(element(), ELLIPSIS)))
+        return df.where(try_divide(ending, list_count(lines)) <= self.max_ratio)
