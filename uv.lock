@@ -1897,6 +1897,7 @@ dependencies = [
     { name = "presidio-analyzer" },
     { name = "presidio-anonymizer" },
     { name = "py7zr" },
+    { name = "pydiskann" },
     { name = "resiliparse" },
     { name = "sentence-transformers" },
     { name = "text-dedup" },
@@ -1927,6 +1928,7 @@ requires-dist = [
     { name = "presidio-analyzer", specifier = ">=2.2.364" },
     { name = "presidio-anonymizer", specifier = ">=2.2.364" },
     { name = "py7zr", specifier = ">=1.1.3" },
+    { name = "pydiskann", specifier = ">=0.5.0" },
     { name = "resiliparse", specifier = ">=1.0.8" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "text-dedup", specifier = ">=0.4.1" },
@@ -5112,6 +5114,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/68/ca/31c57507b13119d7d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/30/a4/2bffa9f8e804325a09867f0e9d30795c80ea9f8d62560bd1b6ad6220eb2f/pydantic_settings-2.15.0-py3-none-any.whl", hash = "sha256:0ba092c291c94baceb5eff768aa0d56400a457585bc0175925a5a5510303da42", size = 69413, upload-time = "2026-08-07T09:24:55.839Z" },
 ]
+
+[[package]]
+name = "pydiskann"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/e6/e5533e8c1db8687d44c74d1d1bc4c6972fcfbffa8d5c6aedd7af89b49d90/pydiskann-0.5.0.tar.gz", hash = "sha256:b95bee52f5cb2c2bd64d08687212c801c08b1fd2c0292a9e0d70abed6fb98448", size = 117578, upload-time = "2026-09-03T02:02:37.725Z" }
 
 [[package]]
 name = "pyelftools"
