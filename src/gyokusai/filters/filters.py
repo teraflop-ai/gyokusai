@@ -1,3 +1,6 @@
+import gzip
+
+import daft
 from daft import DataFrame, col, element
 from daft.functions import (
     contains,
@@ -150,3 +153,29 @@ class BadWordsFilter:
             case_sensitive=False,
         )
         return df.where(matches == 0)
+
+
+class GzipCompressionFilter:
+    def __init__(
+        self,
+        min_ratio: float = 0.3,
+        max_ratio: float = 0.9,
+        input_column: str = "text",
+        name: str = "GzipCompressionFilter",
+    ):
+        self.min_ratio = min_ratio
+        self.max_ratio = max_ratio
+        self.input_column = input_column
+        self.name = name
+
+    @staticmethod
+    @daft.func
+    def gzip_ratio(text: str) -> float:
+        if not text:
+            return 0.0
+        raw = text.encode()
+        return len(gzip.compress(raw)) / len(raw)
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        ratio = self.gzip_ratio(col(self.input_column))
+        return df.where((ratio >= self.min_ratio) & (ratio <= self.max_ratio))

@@ -32,7 +32,8 @@ def ai_content_factory(
             self.model.eval().to(self.device)
             self.inference_mode = torch.inference_mode
             labels = {
-                label.casefold(): int(index) for index, label in self.model.config.id2label.items()
+                label.casefold(): int(index)
+                for index, label in self.model.config.id2label.items()
             }
             self.label_index = labels[ai_label.casefold()]
 
@@ -60,7 +61,9 @@ def ai_content_factory(
             with self.inference_mode():
                 probabilities = self.model(**inputs).logits.softmax(dim=-1)
 
-            for (index, _), score in zip(valid, probabilities[:, self.label_index].cpu().tolist()):
+            for (index, _), score in zip(
+                valid, probabilities[:, self.label_index].cpu().tolist()
+            ):
                 scores[index] = score
             return scores
 
