@@ -7,7 +7,6 @@ from presidio_anonymizer import AnonymizerEngine
 @daft.cls
 class PresidioMasker:
     def __init__(self, language: str = "en"):
-        # Initialized once per worker process
         self.analyzer = AnalyzerEngine()
         self.anonymizer = AnonymizerEngine()
 

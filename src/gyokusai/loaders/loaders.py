@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Optional
 
 import daft
@@ -6,12 +5,14 @@ from daft import CheckpointConfig, CheckpointStore, KeyFilteringSettings
 
 from gyokusai.utils import checkpoint_uri
 
+from .schemas import BaseDataLoader
 
-class DataLoader(ABC):
+
+class DataLoader(BaseDataLoader):
     def __init__(
         self,
         checkpoint_path: Optional[str] = None,
-        file_path_column_name: Optional[str] = "source_path",
+        file_path_column_name: Optional[str] = None,
         checkpoint_on: Optional[str] = "source_path",
         num_workers: Optional[int] = None,
         cpus_per_worker: Optional[float] = None,
@@ -47,9 +48,6 @@ class DataLoader(ABC):
             "checkpoint": self.config,
             "file_path_column": self.file_path_column_name,
         }
-
-    @abstractmethod
-    def read_data(self, input_path: str) -> daft.DataFrame: ...
 
 
 class ParquetLoader(DataLoader):

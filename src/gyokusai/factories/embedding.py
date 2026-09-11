@@ -10,17 +10,13 @@ def embedding_factory(
     embedding_dim: int = 768,
     max_seq_len: Optional[int] = None,
     normalize_embeddings: Optional[bool] = True,
-    precision: str = "float32",
     gpus: int | float = 1,
     cpus: Optional[float] = None,
 ):
     import daft
     from daft import DataType, Series
 
-    from gyokusai.utils import daft_dtype
-
-    dtype = daft_dtype(precision=precision)
-    return_dtype = DataType.embedding(dtype, embedding_dim)
+    return_dtype = DataType.embedding(DataType.float32(), embedding_dim)
 
     @daft.cls(gpus=gpus, cpus=cpus)
     class TextEmbedding:
@@ -37,7 +33,6 @@ def embedding_factory(
                 show_progress_bar=False,
                 normalize_embeddings=normalize_embeddings,
                 truncate_dim=embedding_dim,
-                precision=precision,
                 convert_to_numpy=True,
             )
             return embeddings
@@ -76,7 +71,6 @@ class EmbedText:
         embedding_dim: int = 768,
         max_seq_len: Optional[int] = None,
         normalize_embeddings: Optional[bool] = True,
-        precision: str = "float32",
         gpus: int | float = 1,
         cpus: Optional[float] = None,
         name: str = "EmbedText",
@@ -90,7 +84,6 @@ class EmbedText:
             embedding_dim=embedding_dim,
             max_seq_len=max_seq_len,
             normalize_embeddings=normalize_embeddings,
-            precision=precision,
             gpus=gpus,
             cpus=cpus,
         )

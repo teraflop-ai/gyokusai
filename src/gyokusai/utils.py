@@ -9,23 +9,19 @@ from resiliparse.parse.encoding import bytes_to_str, detect_encoding
 
 
 @daft.func
-def decode_html(html: bytes) -> str:
-    """
-    OpenWebMath: https://arxiv.org/abs/2310.06786
-    Decodes the html if possible.
-    First try to decode with utf-8, then try to detect the encoding.
-    """
+def decode_html(html: bytes) -> str | None:
+    """OpenWebMath: https://arxiv.org/abs/2310.06786"""
     try:
-        html = bytes_to_str(html, "utf-8")
-    except Exception as e:
-        encoding = detect_encoding(html)
-        if encoding is None or encoding == "utf-8":
-            return
-        try:
-            html = bytes_to_str(html, encoding)
-        except Exception as e:
-            return
-    return html
+        return bytes_to_str(html, "utf-8")
+    except Exception:
+        pass
+    encoding = detect_encoding(html)
+    if encoding is None or encoding == "utf-8":
+        return None
+    try:
+        return bytes_to_str(html, encoding)
+    except Exception:
+        return None
 
 
 def checkpoint_uri(path: str) -> str:
