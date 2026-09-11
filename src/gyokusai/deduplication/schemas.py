@@ -11,10 +11,7 @@ class BloomDeduplicator(ABC):
     def _duplicate(self, value: str) -> bool:
         if not isinstance(value, str):
             raise ValueError("Deduplication keys must be non-null strings")
-        if value in self.seen:
-            return True
-        self.seen.insert(value)
-        return False
+        return self.seen.insert(value)
 
     @abstractmethod
     def process(self, row: dict) -> dict | None:

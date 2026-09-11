@@ -1671,6 +1671,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "ipykernel" },
+    { name = "pyperf" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -1705,6 +1706,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "ipykernel", specifier = ">=7.3.0" },
+    { name = "pyperf", specifier = ">=2.10.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.15.22" },
 ]
@@ -4096,6 +4098,18 @@ dependencies = [
 wheels = [
     { url = "https://pypi.nvidia.com/pylibraft-cu13/pylibraft_cu13-26.8.0-cp311-abi3-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:70dd2994b29b3044131f4be18ca07e0572fccdc212894892f4b27544d7662cf6" },
     { url = "https://pypi.nvidia.com/pylibraft-cu13/pylibraft_cu13-26.8.0-cp311-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:025461bafc04c6f6cec061d1d1322d402dde568935289ae2ffd238fd0d4de134" },
+]
+
+[[package]]
+name = "pyperf"
+version = "2.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "psutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/16/91/39ca77aa58f13e8c65d747ac7e06584b55acabfa98987fb8d546bc24860d/pyperf-2.10.0.tar.gz", hash = "sha256:dd93ccfda79214725293e95f1fa6e00cb4a64adcf1326039486d4e1f91caaa62", size = 227609, upload-time = "2026-02-07T11:35:14.693Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/26/f7bd5e37c254c2671f4dfff316d123eba13663bdfee941a01b09ab02d72d/pyperf-2.10.0-py3-none-any.whl", hash = "sha256:79196bc4a11e3c926dd4c6b14c80136c6b37f884fe913cbc57037f37636e9841", size = 144430, upload-time = "2026-02-07T11:35:12.636Z" },
 ]
 
 [[package]]

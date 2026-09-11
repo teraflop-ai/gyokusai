@@ -43,6 +43,7 @@ url = "https://pypi.nvidia.com/"
 [dependency-groups]
 dev = [
     "ipykernel>=7.3.0",
+    "pyperf>=2.10.0",
     "pytest>=9.1.1",
     "ruff>=0.15.22",
 ]
