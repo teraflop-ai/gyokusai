@@ -25,11 +25,15 @@ from daft.functions import (
 
 from gyokusai.filters.regexes import (
     ALPHA_NUMERIC,
+    ALPHABETIC_WORD,
     ELLIPSIS,
     REPEATEDSENTENCES,
+    TABLE_LINE,
     TERMINAL_PUNCTUATION,
+    WORD,
 )
 from gyokusai.filters.utils import load_badwords, paragraphs, sentences
+
 from .config import ENGLISH_STOPWORDS
 from .schemas import BaseFilter
 
@@ -90,7 +94,7 @@ class MinWordsLineFilter(BaseFilter):
     def __call__(self, df: DataFrame) -> DataFrame:
         lines = list_filter(
             sentences(self.input_column),
-            regexp_count(element(), r"\S+") >= self.min_words,
+            regexp_count(element(), WORD) >= self.min_words,
         )
         return df.with_column(self.input_column, list_join(lines, "\n"))
 
@@ -247,7 +251,7 @@ class WordCountFilter(BaseFilter):
         self.max_words = max_words
 
     def __call__(self, df: DataFrame) -> DataFrame:
-        words = regexp_count(col(self.input_column), r"\S+")
+        words = regexp_count(col(self.input_column), WORD)
         return df.where((words >= self.min_words) & (words <= self.max_words))
 
 
@@ -330,7 +334,7 @@ class StopWordDensityFilter(BaseFilter):
         hits = count_matches(
             text, self.stopwords, whole_words=True, case_sensitive=False
         )
-        words = regexp_count(text, r"\S+")
+        words = regexp_count(text, WORD)
         return df.where(try_divide(hits, words) >= self.min_ratio)
 
 
@@ -354,3 +358,36 @@ class StopWordFilter(BaseFilter):
             case_sensitive=False,
         )
         return df.where(hits >= self.min_stop_words)
+
+
+class TableRatioFilter(BaseFilter):
+    def __init__(
+        self,
+        max_ratio: float = 0.5,
+        input_column: str = "text",
+        name: str = "TableRatioFilter",
+    ):
+        super().__init__(input_column, name)
+        self.max_ratio = max_ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        lines = sentences(self.input_column)
+        table = list_count(list_filter(lines, regexp(element(), TABLE_LINE)))
+        return df.where(try_divide(table, list_count(lines)) <= self.max_ratio)
+
+
+class AlphabeticWordsFilter(BaseFilter):
+    def __init__(
+        self,
+        min_ratio: float = 0.8,
+        input_column: str = "text",
+        name: str = "AlphabeticWordsFilter",
+    ):
+        super().__init__(input_column, name)
+        self.min_ratio = min_ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        text = col(self.input_column)
+        alpha = regexp_count(text, ALPHABETIC_WORD)
+        words = regexp_count(text, WORD)
+        return df.where(try_divide(alpha, words) >= self.min_ratio)
