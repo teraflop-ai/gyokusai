@@ -26,8 +26,11 @@ from daft.functions import (
 from gyokusai.filters.regexes import (
     ALPHA_NUMERIC,
     ALPHABETIC_WORD,
+    BULLET_LINE,
     ELLIPSIS,
-    REPEATEDSENTENCES,
+    ELLIPSIS_SYMBOL,
+    HASH,
+    REPEATED_SENTENCES,
     TABLE_LINE,
     TERMINAL_PUNCTUATION,
     WORD,
@@ -299,7 +302,7 @@ class ThreeSentenceDedupFilter(BaseFilter):
 
     def __call__(self, df: DataFrame) -> DataFrame:
         lines = list_join(sentences(self.input_column), "\n")
-        spans = regexp_extract_all(lines, REPEATEDSENTENCES)
+        spans = regexp_extract_all(lines, REPEATED_SENTENCES)
         spans = list_map(spans, regexp_replace(strip(element()), "\n", " "))
         spans = when(
             list_count(spans) == 0,
@@ -391,3 +394,37 @@ class AlphabeticWordsFilter(BaseFilter):
         alpha = regexp_count(text, ALPHABETIC_WORD)
         words = regexp_count(text, WORD)
         return df.where(try_divide(alpha, words) >= self.min_ratio)
+
+
+class BulletsFilter(BaseFilter):
+    def __init__(
+        self,
+        max_ratio: float = 0.9,
+        input_column: str = "text",
+        name: str = "BulletsFilter",
+    ):
+        super().__init__(input_column, name)
+        self.max_ratio = max_ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        lines = sentences(self.input_column)
+        bullets = list_count(list_filter(lines, regexp(element(), BULLET_LINE)))
+        return df.where(try_divide(bullets, list_count(lines)) <= self.max_ratio)
+
+
+class SymbolsToWordsFilter(BaseFilter):
+    def __init__(
+        self,
+        max_ratio: float = 0.1,
+        input_column: str = "text",
+        name: str = "SymbolsToWordsFilter",
+    ):
+        super().__init__(input_column, name)
+        self.max_ratio = max_ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        text = col(self.input_column)
+        words = regexp_count(text, WORD)
+        hashes = try_divide(regexp_count(text, HASH), words)
+        ellipses = try_divide(regexp_count(text, ELLIPSIS_SYMBOL), words)
+        return df.where((hashes <= self.max_ratio) & (ellipses <= self.max_ratio))
