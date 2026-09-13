@@ -30,7 +30,7 @@ from gyokusai.filters.regexes import (
     TERMINAL_PUNCTUATION,
 )
 from gyokusai.filters.utils import load_badwords, paragraphs, sentences
-
+from .config import ENGLISH_STOPWORDS
 from .schemas import BaseFilter
 
 
@@ -311,3 +311,46 @@ class ThreeSentenceDedupFilter(BaseFilter):
             .distinct()
         )
         return df.join(novel_docs, on=self.doc_id, how="inner")
+
+
+class StopWordDensityFilter(BaseFilter):
+    def __init__(
+        self,
+        min_ratio: float = 0.06,
+        stopwords: list[str] | None = None,
+        input_column: str = "text",
+        name: str = "StopWordDensityFilter",
+    ):
+        super().__init__(input_column, name)
+        self.min_ratio = min_ratio
+        self.stopwords = list(stopwords) if stopwords is not None else ENGLISH_STOPWORDS
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        text = col(self.input_column)
+        hits = count_matches(
+            text, self.stopwords, whole_words=True, case_sensitive=False
+        )
+        words = regexp_count(text, r"\S+")
+        return df.where(try_divide(hits, words) >= self.min_ratio)
+
+
+class StopWordFilter(BaseFilter):
+    def __init__(
+        self,
+        min_stop_words: int = 2,
+        stopwords: list[str] | None = None,
+        input_column: str = "text",
+        name: str = "StopWordFilter",
+    ):
+        super().__init__(input_column, name)
+        self.min_stop_words = min_stop_words
+        self.stopwords = list(stopwords) if stopwords is not None else ENGLISH_STOPWORDS
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        hits = count_matches(
+            col(self.input_column),
+            self.stopwords,
+            whole_words=True,
+            case_sensitive=False,
+        )
+        return df.where(hits >= self.min_stop_words)
