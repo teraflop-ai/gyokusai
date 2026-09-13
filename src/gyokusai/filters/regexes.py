@@ -1,6 +1,6 @@
 TERMINAL_PUNCTUATION = r"[.!?\"'”’]$"
 ELLIPSIS = r"(?i)(?:\.\.\.|\(\.\.\.\)|\[\.\.\.\]|…|\[…\]|-»|read more(?:\.\.)?)\s*$"
-ALPHA_NUMERIC = r"[^a-zA-Z0-9\n?!,.]"
+NON_ALPHA_NUMERIC = r"[^a-zA-Z0-9\n?!,.]"
 REPEATED_SENTENCES = r"(?:[^\n]+\n?){1,3}"
 TABLE_LINE = r"^\s*\|.*\|\s*$|\t.*\t|<t(?:able|r|d|h)\b"
 ALPHABETIC_WORD = r"\S*[A-Za-z]\S*"

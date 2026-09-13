@@ -1,4 +1,5 @@
 import gzip
+from collections import Counter
 
 import daft
 from daft import DataFrame, col, element
@@ -24,18 +25,18 @@ from daft.functions import (
 )
 
 from gyokusai.filters.regexes import (
-    ALPHA_NUMERIC,
     ALPHABETIC_WORD,
     BULLET_LINE,
     ELLIPSIS,
     ELLIPSIS_SYMBOL,
     HASH,
+    NON_ALPHA_NUMERIC,
     REPEATED_SENTENCES,
     TABLE_LINE,
     TERMINAL_PUNCTUATION,
     WORD,
 )
-from gyokusai.filters.utils import load_badwords, paragraphs, sentences
+from gyokusai.filters.utils import load_badwords, ngrams, paragraphs, sentences
 
 from .config import ENGLISH_STOPWORDS
 from .schemas import BaseFilter
@@ -221,7 +222,7 @@ class NonAlphaNumericFilter(BaseFilter):
 
     def __call__(self, df: DataFrame) -> DataFrame:
         text = col(self.input_column)
-        ratio = try_divide(regexp_count(text, ALPHA_NUMERIC), length(text))
+        ratio = try_divide(regexp_count(text, NON_ALPHA_NUMERIC), length(text))
         return df.where(ratio <= self.max_ratio)
 
 
@@ -428,3 +429,61 @@ class SymbolsToWordsFilter(BaseFilter):
         hashes = try_divide(regexp_count(text, HASH), words)
         ellipses = try_divide(regexp_count(text, ELLIPSIS_SYMBOL), words)
         return df.where((hashes <= self.max_ratio) & (ellipses <= self.max_ratio))
+
+
+class RepeatingTopNGramsFilter(BaseFilter):
+    def __init__(
+        self,
+        n: int = 2,
+        max_ratio: float = 0.2,
+        input_column: str = "text",
+        name: str = "RepeatingTopNGramsFilter",
+    ):
+        super().__init__(input_column, name)
+        self.n = n
+        self.max_ratio = max_ratio
+
+    @staticmethod
+    @daft.func
+    def top_ngram_ratio(text: str, n: int) -> float:
+        grams = ngrams(text, n)
+        if not grams:
+            return 1.0
+        top = " ".join(Counter(grams).most_common(1)[0][0])
+        return (len(text) - len(text.replace(top, ""))) / len(text)
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        ratio = self.top_ngram_ratio(col(self.input_column), self.n)
+        return df.where(ratio <= self.max_ratio)
+
+
+class RepeatingDuplicateNGramsFilter(BaseFilter):
+    def __init__(
+        self,
+        n: int = 2,
+        max_ratio: float = 0.2,
+        input_column: str = "text",
+        name: str = "RepeatingDuplicateNGramsFilter",
+    ):
+        super().__init__(input_column, name)
+        self.n = n
+        self.max_ratio = max_ratio
+
+    @staticmethod
+    @daft.func
+    def duplicate_ngram_ratio(text: str, n: int) -> float:
+        grams = ngrams(text, n)
+        if not grams:
+            return 1.0
+        seen, chars, overlap = set(), 0, 0
+        for g in grams:
+            if g in seen:
+                chars += sum(map(len, g[overlap:])) + min(n - overlap, n - 1)
+                overlap = n
+            seen.add(g)
+            overlap = max(overlap - 1, 0)
+        return chars / len(text)
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        ratio = self.duplicate_ngram_ratio(col(self.input_column), self.n)
+        return df.where(ratio <= self.max_ratio)
