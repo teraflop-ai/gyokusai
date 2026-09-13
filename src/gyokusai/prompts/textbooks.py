@@ -12,3 +12,10 @@ RULES:
 - When in doubt whether something is content or furniture, keep it.
 - Output only the kept text: no headings, labels, notes, or code fences of your own.
 - If nothing substantive remains (blank, cover, copyright, contents, index, references, lookup table, or unreadable page), output exactly NO_CONTENT."""
+
+DEFAULT_INSTRUCTION = (
+    "Extract the high-quality informational content from the following raw web page text. "
+    "Remove boilerplate, navigation, ads, and duplicated fragments. "
+    "Output only the cleaned extract, preserving the original wording. "
+    "If there is no substantive content, output nothing."
+)

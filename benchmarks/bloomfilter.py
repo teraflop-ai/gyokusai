@@ -23,12 +23,6 @@ def bench_url(loops, df, duplicates):
 
 if __name__ == "__main__":
     runner = pyperf.Runner(processes=3, values=3, loops=1)
-    df = daft.from_pydict({
-        "url": [f"https://example.com/{i}" for i in range(N)]
-    })
-    runner.bench_time_func(
-        "url_new", bench_url, df, False, inner_loops=N
-    )
-    runner.bench_time_func(
-        "url_duplicates", bench_url, df, True, inner_loops=N
-    )
+    df = daft.from_pydict({"url": [f"https://example.com/{i}" for i in range(N)]})
+    runner.bench_time_func("url_new", bench_url, df, False, inner_loops=N)
+    runner.bench_time_func("url_duplicates", bench_url, df, True, inner_loops=N)

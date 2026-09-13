@@ -24,6 +24,7 @@ dependencies = [
     "pylance>=11.0.0",
     "resiliparse>=1.0.8",
     "sentence-transformers>=5.6.0",
+    "sglang>=0.5.2",
     "text-dedup>=0.4.1",
     "trafilatura>=2.1.0",
     "transformers>=5.6.0",

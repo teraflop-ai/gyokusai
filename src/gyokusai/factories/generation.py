@@ -1,20 +1,16 @@
+import json
 from typing import Optional
 
 import daft
 from daft import DataFrame, col
 
-DEFAULT_INSTRUCTION = (
-    "Extract the high-quality informational content from the following raw web page text. "
-    "Remove boilerplate, navigation, ads, and duplicated fragments. "
-    "Output only the cleaned extract, preserving the original wording. "
-    "If there is no substantive content, output nothing."
-)
+from .config import GENERATION_KWARGS
 
 
 def generation_factory(
     *,
     model_path: str,
-    instruction: str = DEFAULT_INSTRUCTION,
+    instruction: str,
     enable_thinking: bool = False,
     batch_size: int = 64,
     max_new_tokens: int = 4096,
@@ -28,38 +24,35 @@ def generation_factory(
     max_concurrency: Optional[int] = None,
     json_schema: Optional[dict] = None,
     truncate_to: Optional[int] = None,
+    engine_kwargs: Optional[dict] = None,
+    sampling_kwargs: Optional[dict] = None,
 ):
     from daft import DataType, Series
+
+    engine_kwargs = {
+        **GENERATION_KWARGS,
+        "context_length": context_length,
+        "mem_fraction_static": mem_fraction_static,
+        "chunked_prefill_size": chunked_prefill_size,
+        "disable_cuda_graph": disable_cuda_graph,
+        **(engine_kwargs or {}),
+    }
+    sampling = {
+        "temperature": temperature,
+        "max_new_tokens": max_new_tokens,
+        **(sampling_kwargs or {}),
+    }
+    if json_schema is not None:
+        sampling["json_schema"] = json.dumps(json_schema)
 
     @daft.cls(gpus=gpus, cpus=cpus, max_concurrency=max_concurrency)
     class TextGeneration:
         def __init__(self):
-            import json
-
             import sglang as sgl
             from transformers import AutoTokenizer
 
             self.tok = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-            self.engine = sgl.Engine(
-                model_path=model_path,
-                trust_remote_code=True,
-                kv_cache_dtype="fp8_e4m3",
-                mem_fraction_static=mem_fraction_static,
-                context_length=context_length,
-                attention_backend="flashinfer",
-                chunked_prefill_size=chunked_prefill_size,
-                mamba_full_memory_ratio=1.87,
-                mamba_radix_cache_strategy="extra_buffer_lazy",
-                mamba_ssm_dtype="bfloat16",
-                disable_cuda_graph=disable_cuda_graph,
-                allow_auto_truncate=True,
-            )
-            self.sampling = {
-                "temperature": temperature,
-                "max_new_tokens": max_new_tokens,
-            }
-            if json_schema is not None:
-                self.sampling["json_schema"] = json.dumps(json_schema)
+            self.engine = sgl.Engine(model_path=model_path, **engine_kwargs)
 
         @daft.method.batch(return_dtype=DataType.string(), batch_size=batch_size)
         def generate(self, docs: Series):
@@ -75,7 +68,7 @@ def generation_factory(
                 )
                 for doc in docs.to_pylist()
             ]
-            out = self.engine.generate(prompts, sampling_params=self.sampling)
+            out = self.engine.generate(prompts, sampling_params=sampling)
             return [o["text"] for o in out]
 
     return TextGeneration().generate
