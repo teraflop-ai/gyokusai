@@ -449,8 +449,13 @@ class RepeatingTopNGramsFilter(BaseFilter):
         grams = ngrams(text, n)
         if not grams:
             return 1.0
-        top = " ".join(Counter(grams).most_common(1)[0][0])
-        return (len(text) - len(text.replace(top, ""))) / len(text)
+        top = Counter(grams).most_common(1)[0][0]
+        i = c = 0
+        while i < len(grams):
+            hit = grams[i] == top
+            c += hit
+            i += n if hit else 1
+        return c * (sum(map(len, top)) + n - 1) / len(text)
 
     def __call__(self, df: DataFrame) -> DataFrame:
         ratio = self.top_ngram_ratio(col(self.input_column), self.n)
