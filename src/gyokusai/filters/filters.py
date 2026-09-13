@@ -487,3 +487,41 @@ class RepeatingDuplicateNGramsFilter(BaseFilter):
     def __call__(self, df: DataFrame) -> DataFrame:
         ratio = self.duplicate_ngram_ratio(col(self.input_column), self.n)
         return df.where(ratio <= self.max_ratio)
+
+
+class RepeatedLinesByCharFilter(BaseFilter):
+    def __init__(
+        self,
+        ratio: float = 0.8,
+        input_column: str = "text",
+        name: str = "RepeatedLinesByCharFilter",
+    ):
+        super().__init__(input_column, name)
+        self.ratio = ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        lines = sentences(self.input_column)
+        ratio = try_divide(
+            length(list_join(list_distinct(lines), "")),
+            length(list_join(lines, "")),
+        )
+        return df.where(ratio >= self.ratio)
+
+
+class RepeatedParagraphsByCharFilter(BaseFilter):
+    def __init__(
+        self,
+        ratio: float = 0.8,
+        input_column: str = "text",
+        name: str = "RepeatedParagraphsByCharFilter",
+    ):
+        super().__init__(input_column, name)
+        self.ratio = ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        paras = paragraphs(self.input_column)
+        ratio = try_divide(
+            length(list_join(list_distinct(paras), "")),
+            length(list_join(paras, "")),
+        )
+        return df.where(ratio >= self.ratio)
