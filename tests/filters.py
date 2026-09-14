@@ -3,6 +3,8 @@ import daft
 from gyokusai.filters import (
     AlphabeticWordsFilter,
     BadWordsFilter,
+    BoilerPlateLineFilter,
+    BoilerPlateStringFilter,
     BulletsFilter,
     CurlyBraceFilter,
     DigitRatioFilter,
@@ -355,3 +357,30 @@ def test_mean_word_length_filter():
     result = MeanWordLengthFilter(min_length=3, max_length=4)(df).to_pydict()
 
     assert result["text"] == texts[1:6]
+
+
+def test_boilerplate_string_filter():
+    texts = [
+        "The library is open.",
+        "One.\n\nTwo.\n\nThree.\n\nPRIVACY POLICY.\n\nTerms of use and cookie policy.",
+        "Article paragraph.\n\nPrivacy policy.\n\nTerms of use.",
+        "The library is open.\n\nLOREM IPSUM placeholder text.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = BoilerPlateStringFilter(max_boilerplate_string_ratio=0.4)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_boilerplate_line_filter():
+    texts = [
+        "PRIVACY POLICY.\nThe library is open.\nThis site uses cookies.",
+        "The library is open.\n\nEveryone is welcome.",
+        "Privacy policy.\nTerms of use.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = BoilerPlateLineFilter()(df).to_pydict()
+
+    assert result["text"] == ["The library is open.", texts[1], ""]

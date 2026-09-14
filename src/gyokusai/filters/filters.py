@@ -20,6 +20,7 @@ from daft.functions import (
     regexp_count,
     regexp_extract_all,
     regexp_replace,
+    split,
     strip,
     to_list,
     try_divide,
@@ -40,7 +41,7 @@ from gyokusai.filters.regexes import (
 )
 from gyokusai.filters.utils import load_badwords, ngrams, paragraphs, sentences
 
-from .config import ENGLISH_STOPWORDS
+from .config import BOILERPLATE_POLICY_NOTICES, ENGLISH_STOPWORDS
 from .schemas import BaseFilter
 
 
@@ -552,3 +553,42 @@ class MeanWordLengthFilter(BaseFilter):
         return df.where(
             (mean_length >= self.min_length) & (mean_length <= self.max_length)
         )
+
+
+class BoilerPlateStringFilter(BaseFilter):
+    def __init__(
+        self,
+        max_boilerplate_string_ratio: float = 0.4,
+        input_column: str = "text",
+        name: str = "BoilerPlateStringFilter",
+    ):
+        super().__init__(input_column, name)
+        self.max_boilerplate_string_ratio = max_boilerplate_string_ratio
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        paras = paragraphs(self.input_column)
+        paragraph = lower(element())
+        boilerplate = list_filter(
+            paras, count_matches(paragraph, BOILERPLATE_POLICY_NOTICES) > 0
+        )
+        lorem = list_filter(paras, contains(paragraph, "lorem ipsum"))
+        ratio = when(list_count(lorem) > 0, then=1.0).otherwise(
+            try_divide(list_count(boilerplate), list_count(paras))
+        )
+        return df.where(ratio <= self.max_boilerplate_string_ratio)
+
+
+class BoilerPlateLineFilter(BaseFilter):
+    def __init__(
+        self,
+        input_column: str = "text",
+        name: str = "BoilerPlateLineFilter",
+    ):
+        super().__init__(input_column, name)
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        lines = list_filter(
+            split(col(self.input_column), "\n"),
+            count_matches(lower(element()), BOILERPLATE_POLICY_NOTICES) == 0,
+        )
+        return df.with_column(self.input_column, list_join(lines, "\n"))

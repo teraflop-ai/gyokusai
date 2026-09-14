@@ -1,6 +1,8 @@
 from .filters import (
     AlphabeticWordsFilter,
     BadWordsFilter,
+    BoilerPlateLineFilter,
+    BoilerPlateStringFilter,
     BulletsFilter,
     CurlyBraceFilter,
     DigitRatioFilter,
@@ -35,6 +37,8 @@ __all__ = [
     "BadWordsFilter",
     "BaseFilter",
     "BulletsFilter",
+    "BoilerPlateLineFilter",
+    "BoilerPlateStringFilter",
     "CurlyBraceFilter",
     "DigitRatioFilter",
     "EllipsisFilter",
