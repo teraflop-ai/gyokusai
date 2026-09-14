@@ -12,6 +12,7 @@ from daft.functions import (
     list_filter,
     list_join,
     list_map,
+    list_mean,
     lower,
     min,
     regexp,
@@ -530,3 +531,23 @@ class RepeatedParagraphsByCharFilter(BaseFilter):
             length(list_join(paras, "")),
         )
         return df.where(ratio >= self.ratio)
+
+
+class MeanWordLengthFilter(BaseFilter):
+    def __init__(
+        self,
+        min_length: int = 3,
+        max_length: int = 10,
+        input_column: str = "text",
+        name: str = "MeanWordLengthFilter",
+    ):
+        super().__init__(input_column, name)
+        self.min_length = min_length
+        self.max_length = max_length
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        words = regexp_extract_all(col(self.input_column), WORD)
+        mean_length = list_mean(list_map(words, length(element())))
+        return df.where(
+            (mean_length >= self.min_length) & (mean_length <= self.max_length)
+        )

@@ -9,6 +9,7 @@ from .filters import (
     JavascriptLineFilter,
     LengthFilter,
     LoremIpsumFilter,
+    MeanWordLengthFilter,
     MinLinesFilter,
     MinWordsLineFilter,
     NonAlphaNumericFilter,
@@ -58,4 +59,5 @@ __all__ = [
     "TerminalPunctuationLineFilter",
     "ThreeSentenceDedupFilter",
     "WordCountFilter",
+    "MeanWordLengthFilter",
 ]
