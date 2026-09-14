@@ -1,3 +1,4 @@
+import builtins
 import gzip
 from collections import Counter
 
@@ -484,7 +485,7 @@ class RepeatingDuplicateNGramsFilter(BaseFilter):
         seen, chars, overlap = set(), 0, 0
         for g in grams:
             if g in seen:
-                chars += sum(map(len, g[overlap:])) + min(n - overlap, n - 1)
+                chars += sum(map(len, g[overlap:])) + builtins.min(n - overlap, n - 1)
                 overlap = n
             seen.add(g)
             overlap = max(overlap - 1, 0)
