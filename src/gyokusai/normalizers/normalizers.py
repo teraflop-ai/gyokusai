@@ -3,6 +3,7 @@ from daft import DataFrame, col
 from ftfy import fix_text
 
 from .schemas import BaseNormalizer
+from .tokenize import FastTextTokenize
 
 
 class FixEncoding(BaseNormalizer):
@@ -22,4 +23,21 @@ class FixEncoding(BaseNormalizer):
     def __call__(self, df: DataFrame) -> DataFrame:
         return df.with_column(
             self.output_column, self.ftfy_text(col(self.input_column))
+        )
+
+
+class FastTextPreprocess(BaseNormalizer):
+    def __init__(
+        self,
+        input_column: str = "text",
+        output_column: str = "text",
+        name: str = "FastTextPreprocess",
+        model: str = "Qwen/Qwen3.5-9B",
+    ):
+        super().__init__(input_column, output_column, name)
+        self.tokenize = FastTextTokenize(model)
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        return df.with_column(
+            self.output_column, self.tokenize.preprocess(col(self.input_column))
         )
