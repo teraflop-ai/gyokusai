@@ -1,5 +1,6 @@
 import daft
 from daft import DataFrame, col
+from daft.functions import normalize, regexp_replace
 from ftfy import fix_text
 
 from .schemas import BaseNormalizer
@@ -35,9 +36,10 @@ class FastTextPreprocess(BaseNormalizer):
         model: str = "Qwen/Qwen3.5-9B",
     ):
         super().__init__(input_column, output_column, name)
-        self.tokenize = FastTextTokenize(model)
+        self.tokenizer = FastTextTokenize(model)
 
     def __call__(self, df: DataFrame) -> DataFrame:
-        return df.with_column(
-            self.output_column, self.tokenize.preprocess(col(self.input_column))
-        )
+        text = regexp_replace(col(self.input_column), r"\n{3,}", "\n\n")
+        text = normalize(text, lowercase=True, nfd_unicode=True)
+        text = regexp_replace(text, r"\p{Mn}", "")
+        return df.with_column(self.output_column, self.tokenizer.tokenize(text))

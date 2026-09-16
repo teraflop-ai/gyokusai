@@ -1,6 +1,3 @@
-import re
-import unicodedata
-
 import daft
 from daft import DataType, Series
 
@@ -43,21 +40,11 @@ class FastTextTokenize:
         self.tok = gt.Tokenizer(hf).as_hf()
         self.id2tok = hf.convert_ids_to_tokens(list(range(len(hf))))
 
-    @staticmethod
-    def normalize(text: str) -> str:
-        text = re.sub(r"\n{3,}", "\n\n", text).lower()
-        return "".join(
-            c
-            for c in unicodedata.normalize("NFKD", text)
-            if unicodedata.category(c) != "Mn"
-        )
-
     @daft.method.batch(return_dtype=DataType.string())
-    def preprocess(self, text: Series) -> Series:
-        texts = [self.normalize(t) for t in text.to_pylist()]
-        ids = self.tok(texts, return_attention_mask=False, add_special_tokens=False)[
-            "input_ids"
-        ]
+    def tokenize(self, text: Series) -> Series:
+        ids = self.tok(
+            text.to_pylist(), return_attention_mask=False, add_special_tokens=False
+        )["input_ids"]
         return Series.from_pylist(
             [" ".join(self.id2tok[i] for i in row) for row in ids]
         )
