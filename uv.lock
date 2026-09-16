@@ -1666,15 +1666,18 @@ dependencies = [
     { name = "gigatoken" },
     { name = "google-re2" },
     { name = "kernels" },
+    { name = "lark" },
     { name = "lxml" },
     { name = "magic-html" },
     { name = "orjson" },
     { name = "presidio-analyzer" },
     { name = "presidio-anonymizer" },
+    { name = "py-asciimath" },
     { name = "py7zr" },
     { name = "pydiskann" },
     { name = "pyfastbloom" },
     { name = "pylance" },
+    { name = "pylatexenc" },
     { name = "pywhichlang" },
     { name = "resiliparse" },
     { name = "sentence-transformers" },
@@ -1703,15 +1706,18 @@ requires-dist = [
     { name = "gigatoken", specifier = ">=0.10.0" },
     { name = "google-re2", specifier = ">=1.1.20251105" },
     { name = "kernels", specifier = "<0.15" },
+    { name = "lark", specifier = ">=1.3.1" },
     { name = "lxml", specifier = ">=6.1.1" },
     { name = "magic-html", specifier = ">=0.1.8" },
     { name = "orjson", specifier = ">=3.10,<4" },
     { name = "presidio-analyzer", specifier = ">=2.2.364" },
     { name = "presidio-anonymizer", specifier = ">=2.2.364" },
+    { name = "py-asciimath", specifier = ">=0.3.0" },
     { name = "py7zr", specifier = ">=1.1.3" },
     { name = "pydiskann", specifier = ">=0.5.0" },
     { name = "pyfastbloom", specifier = ">=0.1.0" },
     { name = "pylance", specifier = ">=11.0.0" },
+    { name = "pylatexenc", specifier = ">=2.11" },
     { name = "pywhichlang", specifier = ">=0.1.0" },
     { name = "resiliparse", specifier = ">=1.0.8" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
@@ -2228,6 +2234,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c7/80/fb224b4a89c1c1638cde949cb6cce6c3aca7759effbfea46a3d9c3960b21/lance_namespace_urllib3_client-0.8.6.tar.gz", hash = "sha256:b6fb1d306e74a7576e5309919020be744527de484a63dbf5eed10f8b368548df", size = 228772, upload-time = "2026-06-12T17:36:42.609Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c5/90/1e27de15cd1b16785a1c7312beb0a59e75c8344a815f600f58173a565bd1/lance_namespace_urllib3_client-0.8.6-py3-none-any.whl", hash = "sha256:9d78249c3fb15aa3d15d668f78f04a275af3d08d800a7027492f37996ac4968b", size = 369950, upload-time = "2026-06-12T17:36:40.438Z" },
+]
+
+[[package]]
+name = "lark"
+version = "1.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/34/28fff3ab31ccff1fd4f6c7c7b0ceb2b6968d8ea4950663eadcb5720591a0/lark-1.3.1.tar.gz", hash = "sha256:b426a7a6d6d53189d318f2b6236ab5d6429eaf09259f1ca33eb716eed10d2905", size = 382732, upload-time = "2025-10-27T18:25:56.653Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/82/3d/14ce75ef66813643812f3093ab17e46d3a206942ce7376d31ec2d36229e7/lark-1.3.1-py3-none-any.whl", hash = "sha256:c629b661023a014c37da873b4ff58a817398d12635d3bbb2c5a03be7fe5d1e12", size = 113151, upload-time = "2025-10-27T18:25:54.882Z" },
 ]
 
 [[package]]
@@ -4213,6 +4228,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f8/40/31401592d069857b002dd949ff842b74e2061db490ab357ddde9cc26f82e/pylance-11.0.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:488e8bd91139b64c97ea6d63934cf38f4d79a74f2eda582d9d589eb4e53f5023", size = 74766084, upload-time = "2026-08-30T20:22:38.416Z" },
     { url = "https://files.pythonhosted.org/packages/b7/65/7e830b832c5bdbd3fdeedacc7ed1d5230689db78e320eaa974fe791f5ea5/pylance-11.0.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:3d276c023e1e57b6db4c1f1640d0a6058f084a6b6037448902e5acc5c05f08f2", size = 78722184, upload-time = "2026-08-30T20:33:42.341Z" },
     { url = "https://files.pythonhosted.org/packages/7a/cb/9881ff0e4ce13edfcdd941cfea72a74a17aecb672e7dd6b10cce4734da87/pylance-11.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:a8b24d5aa4e547228cedbc80cf6edddc354631cf023d5925f1e1704df748fb2f", size = 84617130, upload-time = "2026-08-30T20:32:35.338Z" },
+]
+
+[[package]]
+name = "pylatexenc"
+version = "2.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/45/ddb0fb04acf95fe9cf9c369814dbdd08651bd2c9ee455f142651e06f4488/pylatexenc-2.11.tar.gz", hash = "sha256:305a072a99ce736246049c9da05841b9d718c0f7ea8888f5f596cf15cb621053", size = 165743, upload-time = "2026-07-25T17:26:31.534Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/06/3d67bd912ef337aa4856b466121d03f304aa1bb4d804f9298b6227cd227e/pylatexenc-2.11-py2.py3-none-any.whl", hash = "sha256:e78e7391d6c104f1ed150e21cfaa58016cdb50aa54406a2eecb793649ffdfdd0", size = 137533, upload-time = "2026-07-25T17:26:30.141Z" },
 ]
 
 [[package]]
