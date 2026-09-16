@@ -2,8 +2,16 @@ from daft import DataFrame, col
 from daft import functions as F
 from huggingface_hub import hf_hub_download
 
-from .classifiers import LanguagePredictor, NSFWPredictor
+from .classifiers import LanguagePredictor, NSFWPredictor, WhichlangPredictor
 from .regexes import FASTTEXT_REGEX
+
+
+class Whichlang:
+    def __init__(self):
+        self.predictor = WhichlangPredictor()
+
+    def __call__(self, df: DataFrame) -> DataFrame:
+        return df.with_column("language", self.predictor.predict(col("text")))
 
 
 class NSFW:

@@ -1,6 +1,6 @@
 import daft
 
-from gyokusai.classifiers import NSFW, LanguageID
+from gyokusai.classifiers import NSFW, LanguageID, Whichlang
 
 
 def test_extract_language():
@@ -65,3 +65,37 @@ def test_extract_nsfw_empty():
     result = NSFW()(df).to_pydict()
 
     assert result["nsfw_score"] == [0.0, 0.0]
+
+
+def test_extract_whichlang():
+    texts = [
+        "The library is open every day. You can borrow books and read newspapers.",
+        "Die Bibliothek ist jeden Tag geöffnet. Dort kann man Bücher ausleihen.",
+        "La bibliothèque est ouverte tous les jours. Vous pouvez emprunter des livres.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = Whichlang()(df).to_pydict()
+
+    assert result["text"] == texts
+    assert result["language"] == ["eng", "deu", "fra"]
+
+
+def test_extract_whichlang_with_newlines():
+    text = (
+        "The library is open every day.\r\nYou can borrow books.\nEveryone is welcome."
+    )
+    df = daft.from_pydict({"text": [text]})
+
+    result = Whichlang()(df).to_pydict()
+
+    assert result["text"] == [text]
+    assert result["language"] == ["eng"]
+
+
+def test_extract_whichlang_empty():
+    df = daft.from_pydict({"text": ["", None]})
+
+    result = Whichlang()(df).to_pydict()
+
+    assert result["language"] == ["eng", "eng"]

@@ -22,6 +22,7 @@ dependencies = [
     "pydiskann>=0.5.0",
     "pyfastbloom>=0.1.0",
     "pylance>=11.0.0",
+    "pywhichlang>=0.1.0",
     "resiliparse>=1.0.8",
     "sentence-transformers>=5.6.0",
     "sglang>=0.5.2",

@@ -1,6 +1,14 @@
 import daft
+from pywhichlang import detect_languages
 
 from .schemas import BaseClassifier
+
+
+@daft.cls
+class WhichlangPredictor:
+    @daft.method.batch(return_dtype=daft.DataType.string())
+    def predict(self, texts: daft.Series) -> list[str]:
+        return detect_languages([t or "" for t in texts.to_pylist()])
 
 
 @daft.cls
