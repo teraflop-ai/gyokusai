@@ -1,14 +1,17 @@
 import daft
+from daft import Expression
+from daft.functions import length, regexp, regexp_count, try_divide
 from lxml import etree
 from lxml import html as lhtml
 from py_asciimath.translator.translator import MathML2Tex
 from pylatexenc.latexwalker import LatexWalker, LatexWalkerParseError
 
-from .regexes import CODE_PATTERN
+from .regexes import AI_PHRASE_PATTERN, AI_STYLE_PATTERN, AI_TRACE_PATTERN, CODE_PATTERN
+from .schemas import BaseDetector
 
 
 @daft.cls(use_process=True)
-class CodeDetector:
+class CodeDetector(BaseDetector):
     def __init__(self):
         self.parser = lhtml.HTMLParser(encoding="utf-8")
 
@@ -37,7 +40,7 @@ class CodeDetector:
 
 
 @daft.cls(use_process=True)
-class MathDetector:
+class MathDetector(BaseDetector):
     def __init__(self):
         self.parser = lhtml.HTMLParser(encoding="utf-8")
         self.converter = MathML2Tex()
@@ -98,3 +101,27 @@ class MathDetector:
             found = True
 
         return found
+
+
+class AIPhraseDetector(BaseDetector):
+    def contains(self, text: Expression) -> Expression:
+        return regexp(text, AI_PHRASE_PATTERN).fill_null(False)
+
+
+class AIStyleDetector(BaseDetector):
+    def __init__(
+        self, min_hits: int = 3, min_per_kchar: float = 0.5, name: str | None = None
+    ):
+        super().__init__(name)
+        self.min_hits = min_hits
+        self.min_per_kchar = min_per_kchar
+
+    def contains(self, text: Expression) -> Expression:
+        hits = regexp_count(text, AI_STYLE_PATTERN)
+        rate = try_divide(hits * 1000, length(text))
+        return ((hits >= self.min_hits) & (rate >= self.min_per_kchar)).fill_null(False)
+
+
+class AITraceDetector(BaseDetector):
+    def contains(self, html: Expression) -> Expression:
+        return regexp(html, AI_TRACE_PATTERN).fill_null(False)

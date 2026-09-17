@@ -1,8 +1,20 @@
 import daft
 import pytest
-from daft import col
+from daft import DataType, col
 
-from gyokusai.detectors import CodeDetector, MathDetector
+from gyokusai.detectors import (
+    AIPhraseDetector,
+    AIStyleDetector,
+    AITraceDetector,
+    CodeDetector,
+    MathDetector,
+)
+
+
+def frame(column, value):
+    return daft.from_pydict({column: [value]}).with_column(
+        column, col(column).cast(DataType.string())
+    )
 
 
 @pytest.mark.parametrize(
@@ -18,7 +30,7 @@ from gyokusai.detectors import CodeDetector, MathDetector
     ],
 )
 def test_code_detector(html, expected):
-    df = daft.from_pydict({"html": [html]})
+    df = frame("html", html)
     detector = CodeDetector()
     result = df.with_column("has_code", detector.contains(col("html"))).to_pydict()
 
@@ -51,8 +63,99 @@ def test_code_detector(html, expected):
     ],
 )
 def test_math_detector(html, expected):
-    df = daft.from_pydict({"html": [html]})
+    df = frame("html", html)
     detector = MathDetector()
     result = df.with_column("has_math", detector.contains(col("html"))).to_pydict()
 
     assert result["has_math"] == [expected]
+
+
+@pytest.mark.parametrize(
+    ("html", "expected"),
+    [
+        (None, False),
+        ("", False),
+        ('<a href="https://x.com/?utm_source=chatgpt.com">x</a>', True),
+        (
+            '<a href="https://r.com/?u=https%3A%2F%2Fx.com%2F%3Futm_source%3Dchatgpt.com">x</a>',
+            True,
+        ),
+        ('<a href="https://x.com/?utm_source=newsletter">x</a>', False),
+        ('<div data-message-model-slug="gpt-4o-mini"></div>', True),
+        ('<div data-testid="conversation-turn-3"></div>', True),
+        ('<h3 data-start="1181" data-end="1230">x</h3>', True),
+        ('<pre data-start="5"><code>x</code></pre>', False),
+        ('<p data-is-last-node="">x</p>', True),
+        ("<p>hello world</p>", False),
+    ],
+)
+def test_ai_trace_detector(html, expected):
+    df = frame("html", html)
+    result = df.with_column(
+        "has_slop", AITraceDetector().contains(col("html"))
+    ).to_pydict()
+
+    assert result["has_slop"] == [expected]
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (None, False),
+        ("", False),
+        ("As an AI language model, I cannot browse the internet.", True),
+        ("As an AI, I can't help with that.", True),
+        ("As an AI researcher, I disagree.", False),
+        ("I'm an AI.", True),
+        ("Intro\nI am ChatGPT, a model.", True),
+        ("I was trained by OpenAI.", True),
+        ("Some text. As of my last knowledge update, X was true.", True),
+        ('He wrote "As an AI language model" in the essay.', False),
+        ("I'm sorry, but I cannot provide medical advice.", True),
+        ("I’m sorry, but I can’t generate that.", True),
+        ("I'm sorry, but I can't make it on Friday.", False),
+        ("I don't have access to real-time data.", True),
+        ("I don't have real time to spend on this.", False),
+        ("I can't access the internet at home.", False),
+        ("Certainly! Here's a summary of the article.", True),
+        ("Sure, here's my config file.", False),
+        ("Here's an updated version of your essay.", True),
+        ("Here's an updated version of the changelog.", False),
+        ("Regenerate response", True),
+        ("Click Regenerate response to retry.", False),
+    ],
+)
+def test_ai_phrase_detector(text, expected):
+    df = frame("text", text)
+    result = df.with_column(
+        "has_phrase", AIPhraseDetector().contains(col("text"))
+    ).to_pydict()
+
+    assert result["has_phrase"] == [expected]
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (None, False),
+        ("", False),
+        (
+            "It's important to note that in today's fast-paced world, "
+            "unlock your full potential is a testament to hard work.",
+            True,
+        ),
+        ("This is a testament to the team. Let's dive into the results.", False),
+        (
+            "lorem ipsum " * 600
+            + "A testament to it. Without further ado. Only time will tell.",
+            False,
+        ),
+    ],
+)
+def test_ai_style_detector(text, expected):
+    df = frame("text", text)
+    result = df.with_column(
+        "has_style", AIStyleDetector().contains(col("text"))
+    ).to_pydict()
+
+    assert result["has_style"] == [expected]
