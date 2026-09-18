@@ -1,4 +1,4 @@
-from .normalizers import FastTextPreprocess, FixEncoding
 from .schemas import BaseNormalizer
+from .stages import FixEncoding
 
-__all__ = ["BaseNormalizer", "FixEncoding", "FastTextPreprocess"]
+__all__ = ["BaseNormalizer", "FixEncoding"]

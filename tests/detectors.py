@@ -2,13 +2,7 @@ import daft
 import pytest
 from daft import DataType, col
 
-from gyokusai.detectors import (
-    AIPhraseDetector,
-    AIStyleDetector,
-    AITraceDetector,
-    CodeDetector,
-    MathDetector,
-)
+from gyokusai.detectors import AIPhrase, AIStyle, AITrace, Code, Math
 
 
 def frame(column, value):
@@ -29,10 +23,8 @@ def frame(column, value):
         ("<!-- <pre><code>print(1)</code></pre> -->", False),
     ],
 )
-def test_code_detector(html, expected):
-    df = frame("html", html)
-    detector = CodeDetector()
-    result = df.with_column("has_code", detector.contains(col("html"))).to_pydict()
+def test_code(html, expected):
+    result = Code()(frame("html", html)).to_pydict()
 
     assert result["has_code"] == [expected]
 
@@ -62,10 +54,8 @@ def test_code_detector(html, expected):
         ("<!-- <math><mi>x</mi></math> -->", False),
     ],
 )
-def test_math_detector(html, expected):
-    df = frame("html", html)
-    detector = MathDetector()
-    result = df.with_column("has_math", detector.contains(col("html"))).to_pydict()
+def test_math(html, expected):
+    result = Math()(frame("html", html)).to_pydict()
 
     assert result["has_math"] == [expected]
 
@@ -89,13 +79,10 @@ def test_math_detector(html, expected):
         ("<p>hello world</p>", False),
     ],
 )
-def test_ai_trace_detector(html, expected):
-    df = frame("html", html)
-    result = df.with_column(
-        "has_slop", AITraceDetector().contains(col("html"))
-    ).to_pydict()
+def test_ai_trace(html, expected):
+    result = AITrace()(frame("html", html)).to_pydict()
 
-    assert result["has_slop"] == [expected]
+    assert result["has_ai_trace"] == [expected]
 
 
 @pytest.mark.parametrize(
@@ -125,13 +112,10 @@ def test_ai_trace_detector(html, expected):
         ("Click Regenerate response to retry.", False),
     ],
 )
-def test_ai_phrase_detector(text, expected):
-    df = frame("text", text)
-    result = df.with_column(
-        "has_phrase", AIPhraseDetector().contains(col("text"))
-    ).to_pydict()
+def test_ai_phrase(text, expected):
+    result = AIPhrase()(frame("text", text)).to_pydict()
 
-    assert result["has_phrase"] == [expected]
+    assert result["has_ai_phrase"] == [expected]
 
 
 @pytest.mark.parametrize(
@@ -152,10 +136,7 @@ def test_ai_phrase_detector(text, expected):
         ),
     ],
 )
-def test_ai_style_detector(text, expected):
-    df = frame("text", text)
-    result = df.with_column(
-        "has_style", AIStyleDetector().contains(col("text"))
-    ).to_pydict()
+def test_ai_style(text, expected):
+    result = AIStyle()(frame("text", text)).to_pydict()
 
-    assert result["has_style"] == [expected]
+    assert result["has_ai_style"] == [expected]

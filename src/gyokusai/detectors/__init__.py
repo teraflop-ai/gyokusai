@@ -5,6 +5,7 @@ from .detectors import (
     CodeDetector,
     MathDetector,
 )
+from .stages import AIPhrase, AIStyle, AITrace, Code, Math
 
 __all__ = [
     "CodeDetector",
@@ -12,4 +13,9 @@ __all__ = [
     "AIPhraseDetector",
     "AIStyleDetector",
     "AITraceDetector",
+    "Code",
+    "Math",
+    "AIPhrase",
+    "AIStyle",
+    "AITrace",
 ]
