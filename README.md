@@ -15,6 +15,7 @@ ruff check --select I --fix . && ruff format .
   note         = {Python package available on PyPI at \url{https://pypi.org/project/gyokusai/}}
 }
 ```
+
 ```bibtex
 @misc{paster2023openwebmath,
     title={OpenWebMath: An Open Dataset of High-Quality Mathematical Web Text},

@@ -1,0 +1,13 @@
+Bootstrap: docker
+From: teraflopai/gyokusai:latest
+
+%environment
+    export PATH="/opt/venv/bin:$PATH"
+
+%test
+    /opt/venv/bin/python -c "import torch; from gyokusai.normalizers import FixEncoding"
+
+%runscript
+    cd /work || exit 1
+    if [ "$#" -eq 0 ]; then set -- python; fi
+    exec "$@"

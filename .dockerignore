@@ -1,0 +1,118 @@
+# ==============================================================================
+# Created by https://dockerignore.com/
+# LANGUAGE TEMPLATE for Python
+# Website: https://www.python.org/
+# Repository: https://github.com/python/cpython
+# ==============================================================================
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TEMPLATE OVERVIEW & USAGE NOTES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# • TEMPLATE TYPE: LANGUAGE TEMPLATE
+# • PURPOSE: Python-specific patterns for Docker builds
+# • DESIGN PHILOSOPHY: Contains only Python-specific patterns (no security patterns)
+# • COMBINATION GUIDANCE: Combine with framework or common templates as needed
+# • SECURITY CONSIDERATIONS: Does NOT include security patterns (use common/security.dockerignore)
+# • BEST PRACTICES: Combine with security template for complete protection
+# • OFFICIAL SOURCES: Python community patterns and Docker best practices
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Build Artifacts
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+**/.eggs/
+**/develop-eggs/
+**/eggs/
+**/parts/
+**/share/python-wheels/
+**/wheels/
+
+MANIFEST
+
+*$py.class
+*.egg
+*.egg-info/
+*.manifest
+*.mo
+*.pot
+*.py,cover
+*.py[cod]
+*.sage.py
+*.spec
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Cache & Temporary
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+**/.mypy_cache/
+**/.pyre/
+**/.pytype/
+**/.ruff_cache/
+**/__pycache__/
+**/cython_debug/
+**/downloads/
+
+.ipynb_checkpoints
+.installed.cfg
+
+celerybeat-schedule
+celerybeat.pid
+pip-delete-this-directory.txt
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Dependencies
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+**/__pypackages__/
+**/ENV/
+**/env/
+**/env.bak/
+**/venv/
+**/venv.bak/
+**/virtualenv/
+
+.venv/
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Logs & Debug
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+pip-log.txt
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Testing
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+**/.cover/
+**/.hypothesis/
+**/.nose/
+**/.nox/
+**/.pytest_cache/
+**/.tox/
+**/cover/
+
+.nosetests.xml
+
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# Tools & Configuration
+# ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+**/.hatch/
+**/.instance/
+**/.profile_default/
+**/.pybuilder/
+**/.pyenv/
+**/.pypackages/
+**/.uv/
+
+.dmypy.json
+.pdm.toml
+.Python
+.scrapy
+.webassets-cache
+
+.git/
+**/.env
+**/.env.*
+build/
+dist/

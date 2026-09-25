@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "reasoning": {"type": "string", "maxLength": 400},
+    "score": {"type": "integer", "enum": [0, 1, 2, 3, 4, 5]}
+  },
+  "required": ["reasoning", "score"],
+  "additionalProperties": false
+}

@@ -1,10 +1,17 @@
+import daft
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 import torch
 
+from gyokusai.deduplication.bloom import (
+    DocumentDeduplicator,
+    ParagraphDeduplicator,
+    URLDeduplicator,
+)
 from gyokusai.deduplication.embedding import Dedup
+from gyokusai.deduplication.stages import BloomDeduplicationStage
 
 pytestmark = pytest.mark.skipif(not torch.cuda.is_available(), reason="cuda")
 D, K, N = 64, 4, 500
@@ -61,3 +68,63 @@ def test_pipeline(tmp_path):
         pq.read_table(list((dst / "drop").glob("*.parquet")))["uuid"].to_pylist()
     )
     assert dropped == set(uuid[K * N :])
+
+
+def test_url_deduplicator():
+    rows = [
+        {"url": "a", "text": "first"},
+        {"url": "a", "text": "second"},
+        {"url": "b", "text": "third"},
+    ]
+
+    result = list(URLDeduplicator(capacity=100).run(rows))
+
+    assert result == [rows[0], rows[2]]
+
+
+def test_document_deduplicator():
+    rows = [
+        {"url": "a", "text": "same"},
+        {"url": "b", "text": "same"},
+        {"url": "c", "text": "different"},
+    ]
+
+    result = list(DocumentDeduplicator(capacity=100).run(rows))
+
+    assert result == [rows[0], rows[2]]
+
+
+def test_paragraph_deduplicator():
+    rows = [
+        {"url": "a", "text": "A\nB\nA"},
+        {"url": "b", "text": "B\nC"},
+        {"url": "c", "text": "A\nB"},
+    ]
+
+    result = list(ParagraphDeduplicator(capacity=100).run(rows))
+
+    assert result == [
+        {"url": "a", "text": "A\nB"},
+        {"url": "b", "text": "C"},
+    ]
+
+
+def test_deduplication_stage():
+    df = daft.from_pydict(
+        {
+            "url": ["a", "a", "b", "c", "d"],
+            "text": ["A\nB", "ignored", "A\nB", "B\nC", "B"],
+        }
+    )
+    stage = BloomDeduplicationStage(
+        URLDeduplicator(capacity=100),
+        DocumentDeduplicator(capacity=100),
+        ParagraphDeduplicator(capacity=100),
+    )
+
+    result = list(stage.run(df))
+
+    assert result == [
+        {"url": "a", "text": "A\nB"},
+        {"url": "c", "text": "C"},
+    ]

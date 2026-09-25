@@ -1,7 +1,12 @@
 import daft
 
 from gyokusai.filters import (
+    AlphabeticWordsFilter,
     BadWordsFilter,
+    BoilerPlateLineFilter,
+    BoilerPlateLineStatsFilter,
+    BoilerPlateStringFilter,
+    BulletsFilter,
     CurlyBraceFilter,
     DigitRatioFilter,
     EllipsisFilter,
@@ -9,12 +14,21 @@ from gyokusai.filters import (
     JavascriptLineFilter,
     LengthFilter,
     LoremIpsumFilter,
+    MeanWordLengthFilter,
     MinLinesFilter,
     MinWordsLineFilter,
     NonAlphaNumericFilter,
     PunctuationFilter,
+    RepeatedLinesByCharFilter,
     RepeatedLinesFilter,
+    RepeatedParagraphsByCharFilter,
     RepeatedParagraphsFilter,
+    RepeatingDuplicateNGramsFilter,
+    RepeatingTopNGramsFilter,
+    StopWordDensityFilter,
+    StopWordFilter,
+    SymbolsToWordsFilter,
+    TableRatioFilter,
     TerminalPunctuationLineFilter,
     ThreeSentenceDedupFilter,
     WordCountFilter,
@@ -217,3 +231,261 @@ def test_repeated_lines_filter():
     result = RepeatedLinesFilter()(df).to_pydict()
 
     assert result["text"] == texts[:2]
+
+
+def test_stop_word_density_filter():
+    texts = ["THE cat AND dog", "The cat ran home", "theater candy"]
+    df = daft.from_pydict({"text": texts})
+
+    result = StopWordDensityFilter(min_ratio=0.5, stopwords=["the", "and"])(
+        df
+    ).to_pydict()
+
+    assert result["text"] == [texts[0]]
+
+
+def test_stop_word_filter():
+    texts = ["THE cat AND dog", "The cat ran home", "theater candy", "the the cat"]
+    df = daft.from_pydict({"text": texts})
+
+    result = StopWordFilter(min_stop_words=2, stopwords=["the", "and"])(df).to_pydict()
+
+    assert result["text"] == [texts[0], texts[3]]
+
+
+def test_table_ratio_filter():
+    texts = [
+        "The library is open.\nEveryone is welcome.",
+        "| Name | Age |\nThe library is open.",
+        "| Name | Age |\n| Alice | 30 |",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = TableRatioFilter(max_ratio=0.5)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_alphabetic_words_filter():
+    texts = ["one two three", "one two 123 456", "one 123 456"]
+    df = daft.from_pydict({"text": texts})
+
+    result = AlphabeticWordsFilter(min_ratio=0.5)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_bullets_filter():
+    texts = [
+        "The library is open.\nEveryone is welcome.",
+        "• First item.\nThis is ordinary prose.",
+        "• First item.\n‣ Second item.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = BulletsFilter(max_ratio=0.5)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_symbols_to_words_filter():
+    texts = [
+        "one two three four",
+        "# one two three",
+        "... one two three",
+        "# ... one two",
+        "# # one two",
+        "... ... one two",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = SymbolsToWordsFilter(max_ratio=0.25)(df).to_pydict()
+
+    assert result["text"] == texts[:4]
+
+
+def test_repeating_top_ngrams_filter():
+    texts = ["aa bb cc dd", "aa aa aa", "aa bb aa bb", "aa", ""]
+    df = daft.from_pydict({"text": texts})
+
+    result = RepeatingTopNGramsFilter(n=2, max_ratio=0.625)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_repeating_duplicate_ngrams_filter():
+    texts = ["aa bb cc dd", "aa aa aa aa", "aa aa aa aa aa", "aa", ""]
+    df = daft.from_pydict({"text": texts})
+
+    result = RepeatingDuplicateNGramsFilter(n=2, max_ratio=8 / 11)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_repeated_lines_by_char_filter():
+    texts = ["A.\nBBB.", "A.\nBBB.\nA.", "A.\nBBB.\nBBB."]
+    df = daft.from_pydict({"text": texts})
+
+    result = RepeatedLinesByCharFilter(ratio=0.75)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_repeated_paragraphs_by_char_filter():
+    texts = ["A.\n\nBBB.", "A.\n\nBBB.\n\nA.", "A.\n\nBBB.\n\nBBB."]
+    df = daft.from_pydict({"text": texts})
+
+    result = RepeatedParagraphsByCharFilter(ratio=0.75)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_mean_word_length_filter():
+    texts = [
+        "a bb",
+        "cat dog",
+        "  cat\tfive\n",
+        "four five",
+        "a!! b??",
+        "été déjà",
+        "longer words",
+        "",
+        " \t\n",
+        None,
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = MeanWordLengthFilter(min_length=3, max_length=4)(df).to_pydict()
+
+    assert result["text"] == texts[1:6]
+
+
+def test_boilerplate_string_filter():
+    texts = [
+        "The library is open.",
+        "One.\n\nTwo.\n\nThree.\n\nPRIVACY POLICY.\n\nTerms of use and cookie policy.",
+        "Article paragraph.\n\nPrivacy policy.\n\nTerms of use.",
+        "The library is open.\n\nLOREM IPSUM placeholder text.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = BoilerPlateStringFilter(max_boilerplate_string_ratio=0.4)(df).to_pydict()
+
+    assert result["text"] == texts[:2]
+
+
+def test_boilerplate_line_filter():
+    texts = [
+        "PRIVACY POLICY.\nThe library is open.\nThis site uses cookies.",
+        "The library is open.\n\nEveryone is welcome.",
+        "Privacy policy.\nTerms of use.",
+    ]
+    df = daft.from_pydict({"text": texts})
+
+    result = BoilerPlateLineFilter()(df).to_pydict()
+
+    assert result["text"] == ["The library is open.", texts[1], ""]
+
+
+def test_boilerplate_line_stats_filter():
+    texts = [
+        "Home | Blog\n\nCats are great pets.\n\n© 2023 Example Inc.",
+        "Home | Blog\n\nDogs love long walks.\n\n© 2024 Example Inc.",
+        "Home | Blog\n\nBirds can fly south.\n\n© 2025 Example Inc.",
+        "Home | Blog\n\nThis site has one page.",
+    ]
+    urls = [
+        "https://example.com/a",
+        "https://example.com/b",
+        "https://example.com/c",
+        "https://other.org/a",
+    ]
+    df = daft.from_pydict({"record_id": [1, 2, 3, 4], "url": urls, "text": texts})
+
+    result = BoilerPlateLineStatsFilter()(df).sort("record_id").to_pydict()
+
+    assert result["text"] == [
+        "Cats are great pets.",
+        "Dogs love long walks.",
+        "Birds can fly south.",
+        texts[3],
+    ]
+
+
+def test_boilerplate_line_stats_filter_global():
+    texts = [
+        "Skip to content\nCats are great pets.",
+        "Skip to content\nDogs love long walks.",
+    ]
+    urls = ["https://a.com/1", "https://b.com/1"]
+    df = daft.from_pydict({"record_id": [1, 2], "url": urls, "text": texts})
+
+    result = BoilerPlateLineStatsFilter(min_global_docs=2)(df).sort("record_id")
+
+    assert result.to_pydict()["text"] == [
+        "Cats are great pets.",
+        "Dogs love long walks.",
+    ]
+
+
+def test_boilerplate_line_stats_filter_domain_ratio():
+    texts = ["Rare sidebar line."] * 3 + ["Common sidebar line."] * 5 + [""] * 92
+    urls = [f"https://example.com/{i}" for i in range(100)]
+    df = daft.from_pydict({"record_id": list(range(100)), "url": urls, "text": texts})
+
+    result = BoilerPlateLineStatsFilter(min_domain_ratio=0.05)(df).sort("record_id")
+
+    assert result.to_pydict()["text"] == ["Rare sidebar line."] * 3 + [""] * 97
+
+
+def test_boilerplate_line_stats_filter_repeated_lines():
+    text = (
+        "This paragraph was extracted twice by the parser.\n"
+        "Yes\n"
+        "This paragraph was extracted twice by the parser.\n"
+        "Yes\n"
+        "----------------------------------------\n"
+        "}\n"
+        "}"
+    )
+    df = daft.from_pydict(
+        {"record_id": [1], "url": ["https://example.com/a"], "text": [text]}
+    )
+
+    result = BoilerPlateLineStatsFilter()(df).to_pydict()
+
+    assert result["text"] == [
+        "This paragraph was extracted twice by the parser.\n"
+        "Yes\n"
+        "Yes\n"
+        "----------------------------------------\n"
+        "}\n"
+        "}"
+    ]
+
+
+def test_boilerplate_line_stats_filter_unicode_forms():
+    texts = [
+        "Caf\u00e9 | Men\u00fc\nCats are great pets.",
+        "Caf\u00e9 | Men\u00fc\nDogs love long walks.",
+        "Cafe\u0301 | Menu\u0308\nBirds can fly south.",
+    ]
+    urls = [f"https://example.com/{i}" for i in range(3)]
+    df = daft.from_pydict({"record_id": [1, 2, 3], "url": urls, "text": texts})
+
+    result = BoilerPlateLineStatsFilter()(df).sort("record_id").to_pydict()
+
+    assert result["text"] == [
+        "Cats are great pets.",
+        "Dogs love long walks.",
+        "Birds can fly south.",
+    ]
+
+
+def test_boilerplate_line_stats_filter_empty_text():
+    urls = ["https://example.com/a", "https://example.com/b"]
+    df = daft.from_pydict({"record_id": [1, 2], "url": urls, "text": ["", None]})
+
+    result = BoilerPlateLineStatsFilter()(df).sort("record_id").to_pydict()
+
+    assert result["text"] == ["", ""]
