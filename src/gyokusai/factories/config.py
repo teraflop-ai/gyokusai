@@ -4,6 +4,7 @@ GENERATION_KWARGS = {
     "attention_backend": "flashinfer",
     "mamba_ssm_cache_dtype": "bfloat16",
     "enable_prefix_caching": True,
+    "disable_log_stats": False,
     "structured_outputs_config": {
         "backend": "xgrammar",
         "disable_any_whitespace": True,

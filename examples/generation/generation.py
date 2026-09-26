@@ -26,11 +26,10 @@ if __name__ == "__main__":
         default="/e/data1/datasets/products/mmlaion/shared/models/Qwen/Qwen3.8-27B-FP8",
     )
     p.add_argument("--instruction", default=WEBPAGE_EDU_SCORE_INSTRUCTION)
-    p.add_argument("--enable-thinking", action="store_true")
     p.add_argument(
         "--max-concurrency",
         type=int,
-        default=int(os.environ.get("SLURM_GPUS_ON_NODE", 1)),
+        default=int(os.environ.get("SLURM_GPUS_ON_NODE", 4)),
     )
     p.add_argument("--batch-size", type=int, default=8192)
     p.add_argument("--max-new-tokens", type=int, default=256)
@@ -38,7 +37,7 @@ if __name__ == "__main__":
     p.add_argument("--context-length", type=int, default=8192)
     p.add_argument("--mem-fraction-static", type=float, default=0.9)
     p.add_argument("--chunked-prefill-size", type=int, default=16384)
-    p.add_argument("--truncate-to", type=int, default=20000)
+    p.add_argument("--truncate-to", type=int, default=32000)
     p.add_argument("--disable-cuda-graph", action="store_true")
     p.add_argument(
         "--json-schema",

@@ -12,9 +12,7 @@ class SlurmRunner:
         extension: str = ".parquet",
     ):
         env = os.environ.get
-        self.task_id = int(env("SLURM_ARRAY_TASK_ID", 0)) - int(
-            env("SLURM_ARRAY_TASK_MIN", 0)
-        )
+        self.task_id = int(env("SLURM_ARRAY_TASK_ID", 0))
         self.num_tasks = num_tasks or int(env("SLURM_ARRAY_TASK_COUNT", 1))
         self.input = input
         self.extension = extension

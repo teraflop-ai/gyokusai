@@ -81,6 +81,8 @@ Score cumulatively from 0 to 5. Start at 0. For each level in order, add 1 point
 4. Highly useful: focused, coherent, and thorough for its scope, with explanation supported by examples, worked problems, derivations, exercises, or concrete demonstrations, and little irrelevant content. Comparable to a textbook chapter, a course page, or an in-depth expository article.
 5. Outstanding: exceptionally clear and complete, deliberately structured for learning (builds from fundamentals, motivates ideas, anticipates confusion, checks understanding), and free of irrelevant content. A teacher could assign it as is.
 
+The score is the number of consecutive levels that held, starting from level 1; once a level fails, no later level can add points.
+
 Rules:
 - Accuracy matters. Content that is plainly wrong, pseudoscientific, or misleading (including health, finance, and history) scores at most 1, regardless of how it is written.
 - Marketing, SEO filler, and advertorials that mention a topic without real substance score at most 2, even when long and well formatted.
@@ -88,6 +90,7 @@ Rules:
 - Instructions count when they teach a transferable skill or explain why (a cooking technique explained, a repair guide with reasoning); bare recipes, step lists, or specifications without explanation score at most 2.
 - Do not rate the topic, the source, or the writing style on its own; rate how much a learner would learn from this text.
 
+Write the reasoning about this page only, and do not quote it at length or repeat these instructions.
 Respond with a single JSON object and nothing else:
 {"reasoning": "<under 400 characters: what the main content is and who it is for; which levels held; the first level that failed and why>", "score": <integer 0-5>}"""
 
