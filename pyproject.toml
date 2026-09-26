@@ -1,6 +1,6 @@
 [project]
 name = "gyokusai"
-version = "0.1.9"
+version = "0.1.10"
 description = "Gyokusai: A Web-Scale Text Processing Library"
 readme = "README.md"
 requires-python = ">=3.12"
