@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 import daft
@@ -30,15 +31,16 @@ def generation_factory(
 
     engine_kwargs = {
         **GENERATION_KWARGS,
-        "max_model_len": context_length,
-        "gpu_memory_utilization": mem_fraction_static,
-        "max_num_batched_tokens": chunked_prefill_size,
-        "enforce_eager": disable_cuda_graph,
+        "context_length": context_length,
+        "mem_fraction_static": mem_fraction_static,
+        "chunked_prefill_size": chunked_prefill_size,
+        "disable_cuda_graph": disable_cuda_graph,
         **(engine_kwargs or {}),
     }
     sampling = {
         "temperature": temperature,
-        "max_tokens": max_new_tokens,
+        "max_new_tokens": max_new_tokens,
+        "json_schema": json.dumps(json_schema) if json_schema else None,
         **(sampling_kwargs or {}),
     }
 
@@ -51,27 +53,23 @@ def generation_factory(
     @daft.cls(gpus=gpus, cpus=cpus, max_concurrency=max_concurrency)
     class TextGeneration:
         def __init__(self):
-            from vllm import LLM, SamplingParams
-            from vllm.sampling_params import StructuredOutputsParams
+            import sglang as sgl
+            from transformers import AutoTokenizer
 
-            self.llm = LLM(model=model_path, **engine_kwargs)
-            self.tok = self.llm.get_tokenizer()
-            template = self.tok.apply_chat_template(
-                messages(""),
+            self.engine = sgl.Engine(model_path=model_path, **engine_kwargs)
+            self.tok = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+            self.max_doc_tokens = (
+                engine_kwargs["context_length"]
+                - sampling["max_new_tokens"]
+                - len(self.tok.encode(self.prompt(""), add_special_tokens=False))
+            )
+
+        def prompt(self, doc: str) -> str:
+            return self.tok.apply_chat_template(
+                messages(doc),
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=enable_thinking,
-            )
-            self.max_doc_tokens = (
-                engine_kwargs["max_model_len"]
-                - sampling["max_tokens"]
-                - len(self.tok.encode(template, add_special_tokens=False))
-            )
-            self.params = SamplingParams(
-                structured_outputs=StructuredOutputsParams(json=json_schema)
-                if json_schema
-                else None,
-                **sampling,
             )
 
         @daft.method.batch(return_dtype=DataType.string(), batch_size=batch_size)
@@ -80,13 +78,11 @@ def generation_factory(
                 [(d or "")[:truncate_to] for d in docs.to_pylist()],
                 add_special_tokens=False,
             )["input_ids"]
-            out = self.llm.chat(
-                [messages(self.tok.decode(i[: self.max_doc_tokens])) for i in ids],
-                self.params,
-                use_tqdm=False,
-                chat_template_kwargs={"enable_thinking": enable_thinking},
+            out = self.engine.generate(
+                [self.prompt(self.tok.decode(i[: self.max_doc_tokens])) for i in ids],
+                sampling,
             )
-            return [o.outputs[0].text for o in out]
+            return [o["text"] for o in out]
 
     return TextGeneration().generate
 

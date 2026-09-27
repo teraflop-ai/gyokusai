@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM nvidia/cuda:13.0.3-devel-ubuntu24.04
 COPY --from=ghcr.io/astral-sh/uv:0.12.17 /uv /usr/local/bin/uv
 
@@ -24,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable --python /usr/bin/python3.12
-RUN python -c "import torch, vllm; from gyokusai.normalizers import FixEncoding"
+RUN python -c "import torch, sglang; from gyokusai.normalizers import FixEncoding"
 
 WORKDIR /work
 CMD ["python"]

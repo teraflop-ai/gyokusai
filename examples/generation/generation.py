@@ -8,16 +8,18 @@ from gyokusai.prompts import WEBPAGE_EDU_SCORE_INSTRUCTION
 from gyokusai.runner import SlurmRunner
 
 
-def json_arg(v):
-    if not v:
+def json_arg(value):
+    if not value:
         return None
-    if os.path.isfile(v):
-        with open(v) as f:
+    if os.path.isfile(value):
+        with open(value) as f:
             return json.load(f)
-    return json.loads(v)
+    return json.loads(value)
 
 
 if __name__ == "__main__":
+    os.environ.setdefault("RAY_worker_register_timeout_seconds", "600")
+
     p = SlurmRunner.add_args(argparse.ArgumentParser())
     p.add_argument("--input-column", default="text")
     p.add_argument("--output-column", default="extract")
@@ -31,7 +33,7 @@ if __name__ == "__main__":
         type=int,
         default=int(os.environ.get("SLURM_GPUS_ON_NODE", 4)),
     )
-    p.add_argument("--batch-size", type=int, default=8192)
+    p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--max-new-tokens", type=int, default=256)
     p.add_argument("--temperature", type=float, default=0.0)
     p.add_argument("--context-length", type=int, default=8192)

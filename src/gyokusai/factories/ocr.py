@@ -8,26 +8,31 @@ def ocr_factory(
     gpus: int | float = 1,
 ):
     import daft
+    import sglang as sgl
     from PIL import Image
-    from vllm import LLM, SamplingParams
+    from transformers import AutoTokenizer
 
     return_dtype = daft.DataType.string()
 
     @daft.cls(gpus=gpus)
     class OvisOCR2Parser:
         def __init__(self):
-            self.model = LLM(
-                model=model_name_or_path,
-                tensor_parallel_size=1,
-                gpu_memory_utilization=0.8,
-                gdn_prefill_backend="triton",
+            self.model = sgl.Engine(
+                model_path=model_name_or_path,
+                mem_fraction_static=0.8,
+                linear_attn_prefill_backend="triton",
+                mm_process_config={
+                    "image": {"min_pixels": 448 * 448, "max_pixels": 2880 * 2880}
+                },
             )
 
             prompt = (
                 "\nExtract all readable content from the image in natural human reading order and output the result as a single Markdown document. For charts or images, represent them using an HTML image tag: <"
                 + 'img src="images/bbox_{left}_{top}_{right}_{bottom}.jpg" />, where left, top, right, bottom are bounding box coordinates scaled to [0, 1000). Format formulas as LaTeX. Format tables as HTML: <table>...</table>. Transcribe all other text as standard Markdown. Preserve the original text without translation or paraphrasing.'
             )
-            self.prompt = self.model.get_tokenizer().apply_chat_template(
+            self.prompt = AutoTokenizer.from_pretrained(
+                model_name_or_path
+            ).apply_chat_template(
                 [
                     {
                         "role": "user",
@@ -42,7 +47,7 @@ def ocr_factory(
                 enable_thinking=False,
             )
 
-            self.sampling_params = SamplingParams(max_tokens=16384, temperature=0.0)
+            self.sampling_params = {"max_new_tokens": 16384, "temperature": 0.0}
 
         def _clean_truncated_repeats(
             self,
@@ -81,25 +86,14 @@ def ocr_factory(
         def parse(
             self, images: list[Image.Image], filter_imgtags: bool = True
         ) -> list[str]:
-            vllm_inputs = [
-                {
-                    "prompt": self.prompt,
-                    "multi_modal_data": {"image": image},
-                    "mm_processor_kwargs": {
-                        "images_kwargs": {
-                            "min_pixels": 448 * 448,
-                            "max_pixels": 2880 * 2880,
-                        }
-                    },
-                }
-                for image in images
-            ]
-
-            outputs = self.model.generate(vllm_inputs, self.sampling_params)
+            images = [Image.fromarray(image) for image in images]
+            outputs = self.model.generate(
+                [self.prompt] * len(images), self.sampling_params, image_data=images
+            )
 
             markdowns = []
             for output in outputs:
-                text = output.outputs[0].text.strip()
+                text = output["text"].strip()
                 if filter_imgtags:
                     text = "\n\n".join(
                         block

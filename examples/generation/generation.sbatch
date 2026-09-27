@@ -15,9 +15,12 @@ set -euo pipefail
 
 export WANDB_MODE=offline
 
-VENV=/e/project1/reformo/enrico/qwen-sglang/.venv
-PY=$VENV/bin/python
-SCRIPT=/e/project1/reformo/enrico/qwen-sglang/main.py
+PROJECT_DIR="$SLURM_SUBMIT_DIR"
+VENV="$PROJECT_DIR/.venv-sglang"
+PY="$VENV/bin/python"
+SCRIPT="$PROJECT_DIR/examples/generation/generation.py"
+
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
 
 INPUT_DIR="$1"
 OUTPUT_DIR="$2"
