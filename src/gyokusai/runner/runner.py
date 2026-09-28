@@ -1,5 +1,7 @@
+import argparse
 import faulthandler
 import os
+import shutil
 import socket
 import time
 
@@ -22,12 +24,14 @@ class SlurmRunner:
         output: str,
         num_tasks: int | None = None,
         extension: str = ".parquet",
+        copy_input: bool = True,
     ):
         env = os.environ.get
         self.task_id = int(env("SLURM_ARRAY_TASK_ID", 0))
         self.num_tasks = num_tasks or int(env("SLURM_ARRAY_TASK_COUNT", 1))
         self.input = input
         self.extension = extension
+        self.copy_input = copy_input
         self.output = os.path.join(output, f"task_{self.task_id:05d}")
 
     @staticmethod
@@ -35,13 +39,19 @@ class SlurmRunner:
         parser.add_argument("input")
         parser.add_argument("output")
         parser.add_argument("num_tasks", type=int, nargs="?")
+        parser.add_argument(
+            "--copy-input", action=argparse.BooleanOptionalAction, default=True
+        )
         return parser
 
     @classmethod
     def from_args(cls, args):
         kwargs = vars(args)
         return cls(
-            kwargs.pop("input"), kwargs.pop("output"), kwargs.pop("num_tasks")
+            kwargs.pop("input"),
+            kwargs.pop("output"),
+            kwargs.pop("num_tasks"),
+            copy_input=kwargs.pop("copy_input"),
         ), kwargs
 
     def files(self) -> list[str]:
@@ -67,6 +77,14 @@ class SlurmRunner:
             print(f"Selected {len(files)} files", flush=True)
             if not files:
                 return
+
+            if self.copy_input:
+                os.makedirs("/tmp/input", exist_ok=True)
+                files = [
+                    shutil.copy(f, f"/tmp/input/{i}_{os.path.basename(f)}")
+                    for i, f in enumerate(files)
+                ]
+                print(f"Copied {len(files)} files to /tmp/input", flush=True)
 
             if use_ray:
                 import ray
