@@ -13,17 +13,13 @@
 
 set -euo pipefail
 
+PROJECT_DIR=/e/project1/reformo/enrico/qwen-sglang
+
 export WANDB_MODE=offline
-
-PROJECT_DIR="$SLURM_SUBMIT_DIR"
-VENV="$PROJECT_DIR/.venv-sglang"
-PY="$VENV/bin/python"
-SCRIPT="$PROJECT_DIR/examples/generation/generation.py"
-
 export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
 
 INPUT_DIR="$1"
 OUTPUT_DIR="$2"
 shift 2
 
-"$PY" -u "$SCRIPT" "$INPUT_DIR" "$OUTPUT_DIR" "$@"
+exec "$PROJECT_DIR/.venv/bin/python" -u "$PROJECT_DIR/generation.py" "$INPUT_DIR" "$OUTPUT_DIR" "$@"
