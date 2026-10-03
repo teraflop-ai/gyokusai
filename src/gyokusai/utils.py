@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import Literal
 
 import daft
@@ -22,12 +21,6 @@ def decode_html(html: bytes) -> str | None:
         return bytes_to_str(html, encoding)
     except Exception:
         return None
-
-
-def checkpoint_uri(path: str) -> str:
-    if "://" in path:
-        return path
-    return Path(path).resolve().as_uri()
 
 
 def daft_dtype(

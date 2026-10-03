@@ -1,3 +1,4 @@
+import daft
 import lance
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -10,6 +11,8 @@ from gyokusai.loaders import (
     ParquetLoader,
     WarcLoader,
 )
+
+daft.set_runner_ray()
 
 
 def test_parquet_loader(tmp_path):
@@ -83,3 +86,23 @@ def test_lance_loader(tmp_path):
 @pytest.mark.skip(reason="HuggingFaceLoader requires a Hub repository, not local files")
 def test_huggingface_loader(tmp_path):
     pass
+
+
+def test_parquet_loader_resume(tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+
+    def run(ckpt="ckpt"):
+        loader = ParquetLoader(
+            checkpoint_path=str(tmp_path / ckpt),
+            file_path_column_name="source_path",
+        )
+        return loader.read_data(str(src)).to_pydict()
+
+    pq.write_table(pa.table({"id": [1, 2]}), src / "a.parquet")
+    assert sorted(run()["id"]) == [1, 2]
+
+    pq.write_table(pa.table({"id": [3]}), src / "b.parquet")
+    assert run() == {"id": [3], "source_path": [str(src / "b.parquet")]}
+    assert run()["id"] == []
+    assert sorted(run("fresh")["id"]) == [1, 2, 3]

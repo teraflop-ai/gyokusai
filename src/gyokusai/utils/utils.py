@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import daft
 from daft import DataType, Series
 
@@ -14,3 +16,9 @@ class TokenCounter:
     def num_tokens(self, text: Series) -> Series:
         enc = self.tok(text.to_pylist())
         return Series.from_pylist([len(ids) for ids in enc["input_ids"]])
+
+
+def checkpoint_uri(path: str) -> str:
+    if "://" in path:
+        return path
+    return Path(path).resolve().as_uri()

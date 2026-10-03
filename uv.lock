@@ -2074,7 +2074,7 @@ wheels = [
 
 [[package]]
 name = "gyokusai"
-version = "0.1.11"
+version = "0.1.13"
 source = { editable = "." }
 dependencies = [
     { name = "cugraph-cu13" },
