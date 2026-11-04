@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "cugraph-cu13>=26.8.0",
-    "daft[lance,openai,ray]>=0.7.25",
+    "daft[deltalake,lance,openai,ray]>=0.7.25",
     "fastertext>=0.1.4",
     "flash-kmeans>=0.3.1",
     "ftfy>=6.3.1",
@@ -29,6 +29,7 @@ dependencies = [
     "sentence-transformers>=6.1.0",
     "sglang==0.5.20",
     "text-dedup>=0.4.1",
+    "tldextract>=5.3.2",
     "tokenizers>=0.22.2",
     "torch>=2.13.0",
     "trafilatura>=2.2.0",
