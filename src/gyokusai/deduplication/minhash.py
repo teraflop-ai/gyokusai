@@ -1,80 +1,60 @@
 import argparse
 import os
-import shutil
-import struct
 
 import daft
-from daft import col
-from daft.functions import when
+from daft import DataType, col
+from daft.functions import coalesce, list_agg, to_list
+from deltalake import DeltaTable
 
 
-@daft.func()
-def band_keys(sig: list[int], b: int, r: int) -> list[bytes]:
-    return [struct.pack(f"<B{r}Q", i, *sig[i * r : (i + 1) * r]) for i in range(b)]
+def _uri(p):
+    return p if "://" in p else "file://" + os.path.abspath(p)
 
 
-def _publish(tmp: str, final: str):
-    os.rename(tmp, final)
+def _done(d):
+    return DeltaTable.is_deltatable(d)
 
 
-def _tmp(final: str) -> str:
-    t = final + ".tmp"
-    if os.path.isdir(t):
-        shutil.rmtree(t)
-    return t
+def _write(df, d):
+    df.write_deltalake(d, mode="overwrite")
 
 
-def _canon(e):
+def _mins(e):
+    return e.groupby("u").agg(col("v").min().alias("m"))
+
+
+def _large_star(e, p):
     return (
-        e.select(
-            when(col("u") < col("v"), col("u")).otherwise(col("v")).alias("a"),
-            when(col("u") < col("v"), col("v")).otherwise(col("u")).alias("b"),
-        )
-        .select(col("a").alias("u"), col("b").alias("v"))
-        .where(col("u") != col("v"))
-        .distinct()
-    )
-
-
-def _large_star(e):
-    und = e.select("u", "v").union_all(
-        e.select(col("v").alias("u"), col("u").alias("v"))
-    )
-    m = und.groupby("u").agg(col("v").min().alias("mn"))
-    m = m.select(
-        "u", when(col("u") < col("mn"), col("u")).otherwise(col("mn")).alias("m")
-    )
-    return (
-        und.join(m, on="u")
-        .where(col("v") > col("u"))
-        .select(col("v").alias("u"), col("m").alias("v"))
-        .where(col("u") != col("v"))
+        e.join(_mins(e).select(col("u").alias("v"), "m"), on="v", how="left")
+        .select("u", coalesce(col("m"), col("v")).alias("v"))
+        .repartition(p, "u", "v")
         .distinct()
         .collect()
     )
 
 
-def _small_star(e):
-    d = _canon(e).select(
-        col("v").alias("u"), col("u").alias("v")
-    )  # u = larger endpoint
-    j = d.join(d.groupby("u").agg(col("v").min().alias("m")), on="u").collect()
+def _small_star(e, p):
     return (
-        j.select(col("v").alias("u"), col("m").alias("v"))
-        .union_all(
-            j.select("u", col("m").alias("v"))
-        )  # keep u attached to m (paper's N(u) ∪ {u})
+        e.join(_mins(e), on="u")
+        .select(to_list(col("u"), col("v")).alias("u"), col("m").alias("v"))
+        .explode("u")
         .where(col("u") != col("v"))
+        .repartition(p, "u", "v")
         .distinct()
         .collect()
     )
 
 
-def _same(a, b) -> bool:
-    return (
-        a.join(b, on=["u", "v"], how="anti").count_rows() == 0
-        and b.join(a, on=["u", "v"], how="anti").count_rows() == 0
-    )
+def _components(e):
+    p = max(1, min(512, e.count_rows() // 2_000_000))
+    while True:
+        e2 = _small_star(_large_star(e, p), p)
+        if (
+            e2.count_rows() == e.count_rows()
+            and e2.join(e, on=["u", "v"], how="anti").count_rows() == 0
+        ):
+            return e2
+        e = e2
 
 
 def fuzzy_dedupe(
@@ -88,79 +68,90 @@ def fuzzy_dedupe(
     seed=42,
     b=14,
     r=8,
+    partitions=1024,
 ):
     assert b * r == num_hashes
-    daft.set_runner_ray()
-    sigs, edges_dir, removal_dir = f"{work}/sigs", f"{work}/edges", f"{work}/removal"
-
-    (
-        daft.read_parquet(
-            input_path,
-            file_path_column="source_path",
-            checkpoint=daft.CheckpointConfig(
-                daft.CheckpointStore(f"{work}/ckpt_sig"), on="source_path"
-            ),
-        )
-        .select(
-            col(key),
-            col(text)
-            .normalize(
-                remove_punct=True, lowercase=True, nfd_unicode=True, white_space=True
-            )
-            .minhash(
-                num_hashes=num_hashes,
-                ngram_size=ngram,
-                seed=seed,
-                hash_function="xxhash",
-            )
-            .alias("sig"),
-        )
-        .where(col("sig").not_null())
-        .write_parquet(sigs)
+    daft.set_runner_ray(noop_if_initialized=True)
+    daft.set_execution_config(
+        shuffle_algorithm="flight_shuffle",
+        shuffle_aggregation_default_partitions=partitions,
+    )
+    work, output_dir = _uri(work), _uri(output_dir)
+    sigs, uniq, edges, removal = (
+        f"{work}/{d}" for d in ("sigs", "uniq", "edges", "removal")
     )
 
-    if not os.path.isdir(edges_dir):
-        bands = (
-            daft.read_parquet(sigs)
-            .select(col(key), band_keys(col("sig"), b, r).alias("bk"))
-            .explode("bk")
-        )
-        grouped = (
-            bands.groupby("bk")
-            .agg(col(key).min().alias("dst"), col(key).count().alias("n"))
-            .where(col("n") > 1)
-        )
-        t = _tmp(edges_dir)
+    if not _done(sigs):
+        store = daft.CheckpointStore(f"{work}/ckpt")
         (
-            bands.join(grouped, on="bk")
-            .where(col(key) != col("dst"))
-            .select(col(key).alias("u"), col("dst").alias("v"))
-            .distinct()
-            .write_parquet(t)
+            daft.read_parquet(
+                input_path, checkpoint=daft.CheckpointConfig(store, on=key)
+            )
+            .select(
+                col(key),
+                col(text)
+                .normalize(
+                    remove_punct=True,
+                    lowercase=True,
+                    nfd_unicode=True,
+                    white_space=True,
+                )
+                .minhash(
+                    num_hashes=num_hashes,
+                    ngram_size=ngram,
+                    seed=seed,
+                    hash_function="xxhash",
+                )
+                .cast(DataType.list(DataType.int64()))
+                .alias("sig"),
+            )
+            .where(col("sig").not_null())
+            .write_deltalake(sigs, checkpoint=daft.IdempotentCommit(store, "sigs"))
         )
-        _publish(t, edges_dir)
 
-    if not os.path.isdir(removal_dir):
-        e = daft.read_parquet(edges_dir).collect()
-        for _ in range(100):
-            e2 = _small_star(_large_star(e))
-            if _same(_canon(e), _canon(e2)):
-                e = e2
-                break
-            e = e2
-        und = e.union_all(e.select(col("v").alias("u"), col("u").alias("v")))
-        rep = und.groupby("u").agg(col("v").min().alias("rep"))
-        t = _tmp(removal_dir)
-        rep.where(col("rep") < col("u")).select(col("u").alias(key)).write_parquet(t)
-        _publish(t, removal_dir)
+    if not _done(uniq):
+        _write(
+            daft.read_deltalake(sigs).groupby("sig").agg(col(key).min().alias(key)),
+            uniq,
+        )
 
-    t = _tmp(output_dir)
-    (
-        daft.read_parquet(input_path)
-        .join(daft.read_parquet(removal_dir), on=key, how="anti")
-        .write_parquet(t)
-    )
-    _publish(t, output_dir)
+    if not _done(edges):
+        _write(
+            daft.read_deltalake(uniq)
+            .select(
+                col(key),
+                to_list(
+                    *[col("sig").slice(i * r, (i + 1) * r) for i in range(b)]
+                ).alias("bk"),
+            )
+            .explode("bk", index_column="band")
+            .groupby("band", "bk")
+            .agg(col(key).min().alias("v"), list_agg(col(key)).alias("u"))
+            .select("v", "u")
+            .explode("u")
+            .where(col("u") != col("v"))
+            .distinct(),
+            edges,
+        )
+
+    if not _done(removal):
+        fuzzy = _components(daft.read_deltalake(edges).collect()).select(
+            col("u").alias(key)
+        )
+        exact = (
+            daft.read_deltalake(sigs)
+            .select(key)
+            .join(daft.read_deltalake(uniq).select(key), on=key, how="anti")
+        )
+        _write(exact.union_all(fuzzy), removal)
+
+    if not _done(output_dir):
+        _write(
+            daft.read_parquet(input_path).join(
+                daft.read_deltalake(removal), on=key, how="anti"
+            ),
+            output_dir,
+        )
 
 
 if __name__ == "__main__":
@@ -170,5 +161,13 @@ if __name__ == "__main__":
     p.add_argument("output_dir")
     p.add_argument("--key", default="doc_id")
     p.add_argument("--text", default="paragraph_text")
+    p.add_argument("--partitions", type=int, default=1024)
     a = p.parse_args()
-    fuzzy_dedupe(a.input_path, a.work_dir, a.output_dir, key=a.key, text=a.text)
+    fuzzy_dedupe(
+        a.input_path,
+        a.work_dir,
+        a.output_dir,
+        key=a.key,
+        text=a.text,
+        partitions=a.partitions,
+    )
